@@ -1,6 +1,6 @@
 {
   "name": "easwitch",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

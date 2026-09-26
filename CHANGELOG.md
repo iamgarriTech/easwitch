@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-26
+
 ### Added
 
 - `easw link` offers to set up the shell hook when it isn't set up yet, so plain `eas` commands follow project links too. Press Enter to accept, or pass `--no-hook-prompt` to skip the question. Without a terminal it only prints a tip.
@@ -106,7 +108,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`.
 - `build`, `update`, `submit` and `whoami` run as the resolved account.
 
-[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/iamgarriTech/easwitch/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/iamgarriTech/easwitch/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/iamgarriTech/easwitch/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/iamgarriTech/easwitch/compare/v0.5.1...v0.6.0
