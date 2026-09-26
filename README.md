@@ -9,6 +9,8 @@ If you build apps for yourself, your company and a couple of clients, you know t
 
 Your normal Expo login is never touched. `eas build`, `eas whoami` and `expo start` keep working exactly as before.
 
+![EASwitch demo: listing accounts, adding one, switching, and building a linked project](https://raw.githubusercontent.com/iamgarriTech/easwitch/main/docs/demo/demo.gif)
+
 ```bash
 easw add work               # save an account once
 easw use work               # select it

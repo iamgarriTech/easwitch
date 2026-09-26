@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Stand-in for EAS CLI, used only to record the README demo without real accounts.
+# It answers `whoami` and `build` based on the token EASwitch passes in EXPO_TOKEN.
+
+case "${EXPO_TOKEN:-}" in
+  demo-personal) user="jane" ;;
+  demo-work) user="jane-acme" ;;
+  demo-client) user="acme-dev" ;;
+  "") user="jane" ;;
+  *) echo "The bearer token is invalid." >&2; exit 1 ;;
+esac
+suffix=""
+[ -n "${EXPO_TOKEN:-}" ] && suffix=" (authenticated using EXPO_TOKEN)"
+
+case "$1" in
+  whoami)
+    echo "$user$suffix"
+    ;;
+  build)
+    sleep 0.4; echo "✔ Linked to project @acme/acme-app"
+    sleep 0.4; echo "✔ Using remote iOS credentials (Expo server)"
+    sleep 0.6; echo "✔ Uploaded to EAS"
+    sleep 0.3; echo "✔ Build queued"
+    echo
+    echo "🔗 https://expo.dev/accounts/acme/projects/acme-app/builds/4f1c2d"
+    ;;
+  *)
+    echo "eas $*"
+    ;;
+esac
