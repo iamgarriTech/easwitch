@@ -72,6 +72,8 @@ function signalNumber(signal: NodeJS.Signals): number | undefined {
   )[signal];
 }
 
+export const TOKEN_URL = "https://expo.dev/settings/access-tokens";
+
 /** Resolve the Expo username for a token by running `eas whoami` with it. */
 export function whoamiForToken(token: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -90,7 +92,12 @@ export function whoamiForToken(token: string): Promise<string> {
       if (code === 0 && username) return resolve(username);
       const reason =
         `${out}\n${err}`.split(/\r?\n/).map((l) => l.trim()).find(Boolean) ?? `eas whoami exited with code ${code}`;
-      reject(new EaswError(`Token was rejected by Expo: ${reason}`, "Pass --no-verify to skip this check."));
+      reject(
+        new EaswError(
+          `Token was rejected by Expo: ${reason}`,
+          `Check you copied the whole token, or create a new one at ${TOKEN_URL}. Pass --no-verify to skip this check.`,
+        ),
+      );
     });
   });
 }

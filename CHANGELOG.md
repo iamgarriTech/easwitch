@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Changed
+
+- `easw add` shows the token page link prominently, reminds you to sign in to the right Expo account, and opens the page if you press Enter without a token. A rejected token's error also links to it.
+- `easw add` without a terminal (scripts, CI, AI agents) fails with a clear message instead of trying to prompt.
+
 ## [0.2.1] - 2026-09-26
 
 ### Fixed

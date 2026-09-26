@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -8,7 +9,7 @@ import { assertValidName, loadConfig, saveConfig, type GlobalConfig } from "./co
 import { EaswError } from "./errors.js";
 import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
 import { route } from "./route.js";
-import { runWithAccount, whoamiForToken } from "./run.js";
+import { TOKEN_URL, runWithAccount, whoamiForToken } from "./run.js";
 import { deleteToken, setToken } from "./tokens.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
@@ -27,6 +28,36 @@ async function readStdin(): Promise<string> {
   return data.trim();
 }
 
+/** Best effort: open `url` in the default browser. */
+function openInBrowser(url: string): void {
+  const [cmd, args] =
+    process.platform === "darwin"
+      ? ["open", [url]]
+      : process.platform === "win32"
+        ? ["cmd", ["/c", "start", "", url]]
+        : ["xdg-open", [url]];
+  const child = spawn(cmd, args, { stdio: "ignore", detached: true });
+  child.on("error", () => {});
+  child.unref();
+}
+
+async function promptForToken(name: string): Promise<string> {
+  console.log(`Adding account ${pc.bold(`"${name}"`)}\n`);
+  console.log("Create an access token for this Expo account at:");
+  console.log(`  ${pc.cyan(pc.underline(TOKEN_URL))}`);
+  console.log(pc.dim("  Sign in to the right Expo account in your browser first, so the token belongs to it."));
+  console.log(pc.dim("  Press Enter without a token to open the page.\n"));
+
+  const ask = () => password({ message: "Expo access token:", mask: "*" });
+  let token = (await ask()).trim();
+  if (!token) {
+    openInBrowser(TOKEN_URL);
+    console.log(pc.dim(`  Opening ${TOKEN_URL} in your browser...\n`));
+    token = (await ask()).trim();
+  }
+  return token;
+}
+
 function buildProgram(): Command {
   const program = new Command()
     .name("easw")
@@ -40,7 +71,7 @@ function buildProgram(): Command {
     .option("--token <token>", "access token (prefer the prompt or stdin: flags end up in shell history)")
     .option("--no-verify", "don't check the token against Expo")
     .option("-f, --force", "overwrite an existing profile")
-    .addHelpText("after", "\nCreate a token at https://expo.dev/settings/access-tokens")
+    .addHelpText("after", `\nCreate a token at ${TOKEN_URL}`)
     .action(async (name: string, opts: { token?: string; verify: boolean; force?: boolean }) => {
       assertValidName(name);
       const cfg = loadConfig();
@@ -48,15 +79,16 @@ function buildProgram(): Command {
         throw new EaswError(`Account "${name}" already exists`, "Use --force to replace its token.");
       }
 
-      let token = opts.token;
-      if (!token && !process.stdin.isTTY) token = await readStdin();
-      if (!token) {
-        console.log(pc.dim("Create a token at https://expo.dev/settings/access-tokens"));
-        console.log(`Profile name: ${name}`);
-        token = await password({ message: "Expo access token:", mask: "*" });
+      let token = opts.token?.trim();
+      if (!token && !process.stdin.isTTY) {
+        token = await readStdin();
+        // No terminal to prompt in (a script, CI or an AI agent), so fail clearly instead.
+        if (!token) {
+          throw new EaswError("No token provided", `Pass --token <token> or pipe it via stdin. Create one at ${TOKEN_URL}`);
+        }
       }
-      token = token.trim();
-      if (!token) throw new EaswError("No token provided");
+      if (!token) token = await promptForToken(name);
+      if (!token) throw new EaswError("No token provided", `Create one at ${TOKEN_URL}`);
 
       const username = opts.verify ? await whoamiForToken(token) : undefined;
       await setToken(name, token);
