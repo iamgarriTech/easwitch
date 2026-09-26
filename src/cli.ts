@@ -12,6 +12,7 @@ import { LOGIN_METHODS, loginForToken, type LoginMethod } from "./login.js";
 import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
 import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
+import { SHELLS, detectShell, runShellEas, shellInit, type Shell } from "./shell.js";
 import { TOKEN_URL, runWithAccount, whoamiForToken } from "./run.js";
 import { deleteToken, getToken, setToken } from "./tokens.js";
 
@@ -334,6 +335,21 @@ function buildProgram(): Command {
       ok("Project account removed");
     });
 
+  program
+    .command("shell-init")
+    .description("print a shell hook so plain `eas` uses the linked account in linked projects")
+    .argument("[shell]", SHELLS.join(", "))
+    .addHelpText(
+      "after",
+      '\nAdd to your shell config:\n  zsh/bash:    eval "$(easw shell-init)"\n  fish:        easw shell-init fish | source\n  PowerShell:  easw shell-init powershell | Out-String | Invoke-Expression',
+    )
+    .action((shell: string | undefined) => {
+      if (shell && !(SHELLS as readonly string[]).includes(shell)) {
+        throw new EaswError(`Unsupported shell "${shell}"`, `Use one of: ${SHELLS.join(", ")}.`);
+      }
+      process.stdout.write(shellInit((shell as Shell | undefined) ?? detectShell()));
+    });
+
   // Registered for --help only; main() routes exec before commander parses.
   program.command("exec").argument("<command...>").description("run any command as the selected account");
   program.addHelpText(
@@ -347,6 +363,7 @@ function buildProgram(): Command {
 async function main(argv: string[]): Promise<number> {
   const r = route(argv);
   if (r.kind === "run") return runWithAccount(r.command, r.args);
+  if (r.kind === "shell-eas") return runShellEas(r.args);
   await buildProgram().parseAsync(argv, { from: "user" });
   return typeof process.exitCode === "number" ? process.exitCode : 0;
 }

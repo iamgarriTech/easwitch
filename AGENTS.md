@@ -32,6 +32,7 @@ Set `EASWITCH_CONFIG_DIR` to a temp directory when running the CLI by hand so yo
 | `src/run.ts` | Spawns the child with `EXPO_TOKEN`; passes the exit code through; `whoamiForToken` validates tokens |
 | `src/eas.ts` | Finds EAS CLI: global `eas` on `PATH` first, otherwise the bundled `eas-cli` dependency run with `process.execPath` |
 | `src/login.ts` | `easw add --login`: runs the bundled `eas login` with `HOME`/`USERPROFILE` set to a temp dir, uses that temporary session to create an access token via Expo's GraphQL API, then logs it out and deletes the dir |
+| `src/shell.ts` | `easw shell-init` hook scripts (zsh/bash/fish/PowerShell) and `runShellEas`, which the hook calls through the hidden `__shell-eas` subcommand |
 | `src/tokens.ts` | OS credential store via `@napi-rs/keyring` (service `easwitch`, account = profile name) |
 | `src/config.ts` | Global `config.json` (`{ accounts, current }`, no tokens) in the OS config dir |
 | `src/project.ts` | `.easwitch.json` lookup (walks up like `.git`), project root detection, `.gitignore` update |
@@ -44,6 +45,7 @@ These describe how the tool behaves today. Changing any of them is possible, but
 
 - Tokens are stored only in the OS credential store, never in config files, output or logs.
 - `EXPO_TOKEN` is set only in the spawned child's environment.
+- Plain `eas` uses the normal login unless the user installs the opt-in `easw shell-init` hook. With it, plain `eas` uses the linked account only inside linked projects, and `login`/`logout` still go to the normal session.
 - `easw add --login` never touches the real `~/.expo`: the temporary session lives in a throwaway home directory and is logged out and deleted afterwards. Only the resulting access token is kept, in the credential store.
 - `easw login`, `logout`, `account:login` and `account:logout` are blocked because they would write the normal Expo session.
 - If a project links to an account that doesn't exist, commands fail rather than falling back to the current account.

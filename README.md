@@ -90,6 +90,7 @@ easw build           # always runs as "client-acme" inside this project
 | `easw remove <name>` | Delete an account and its stored token. |
 | `easw link <name>` | Link the current project to an account. |
 | `easw unlink` | Remove the current project's link. |
+| `easw shell-init [shell]` | Print a shell hook so plain `eas` uses the linked account in linked projects. See [below](#use-plain-eas-in-linked-projects-optional). |
 | `easw exec <command...>` | Run any command with the selected account, e.g. `easw exec npx expo-doctor`. |
 | `easw <eas command>` | Any other command is passed to EAS CLI as the selected account: `easw build`, `easw submit`, `easw env:list`, `easw credentials`, `easw build:list`… |
 
@@ -108,6 +109,31 @@ echo "$TOKEN" | easw add work   # read the token from stdin
 easw add work --no-verify       # skip checking the token with Expo
 easw add work --force           # replace the token of an existing account
 ```
+
+## Use plain `eas` in linked projects (optional)
+
+By default, plain `eas` always uses your normal Expo login. If you'd rather type `eas` everywhere, add EASwitch's shell hook. Inside projects you've linked with `easw link`, plain `eas` then runs as the linked account. Everywhere else, it's your normal `eas`.
+
+| Shell | Add to your shell config |
+|---|---|
+| zsh (`~/.zshrc`) or bash (`~/.bashrc`) | `eval "$(easw shell-init)"` |
+| fish (`~/.config/fish/config.fish`) | `easw shell-init fish \| source` |
+| PowerShell (`$PROFILE`) | `easw shell-init powershell \| Out-String \| Invoke-Expression` |
+
+```text
+$ cd ~/code/acme-app       # linked to client-acme
+$ eas build --platform ios
+› easw: using account "client-acme" (linked in .easwitch.json)
+...
+$ cd ~ && eas whoami       # not a linked project
+jane
+```
+
+- The `› easw:` line shows whenever plain `eas` is running as a linked account.
+- `eas login` and `eas logout` always go to your normal session.
+- If you don't have EAS CLI installed globally, plain `eas` uses the copy bundled with EASwitch.
+
+To undo it, remove the line from your shell config.
 
 ## Which account is used?
 
