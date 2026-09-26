@@ -40,10 +40,16 @@ easw add work
 easw add client-acme
 ```
 
-Each one asks for its token, checks it with Expo, and stores it in your system's credential store:
+Each one shows where to create the token, asks for it, checks it with Expo, and stores it in your system's credential store:
 
 ```text
-Profile name: work
+Adding account "work"
+
+Create an access token for this Expo account at:
+  https://expo.dev/settings/access-tokens
+  Sign in to the right Expo account in your browser first, so the token belongs to it.
+  Press Enter without a token to open the page.
+
 ✔ Expo access token: ****************
 ✓ Account "work" added (Expo user: jane-acme)
 ```
