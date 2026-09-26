@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-26
+
 ### Fixed
 
 - A custom `EASWITCH_CONFIG_DIR` now keeps its tokens separate from your real accounts' tokens. Before, adding or removing an account with the same name there (for example in a test or demo) also overwrote or deleted your real token for that account.
@@ -112,7 +114,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`.
 - `build`, `update`, `submit` and `whoami` run as the resolved account.
 
-[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/iamgarriTech/easwitch/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/iamgarriTech/easwitch/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/iamgarriTech/easwitch/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/iamgarriTech/easwitch/compare/v0.6.0...v0.7.0
