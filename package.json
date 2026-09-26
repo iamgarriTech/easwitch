@@ -1,0 +1,53 @@
+{
+  "name": "easwitch",
+  "version": "0.1.0",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "expo",
+    "eas",
+    "cli",
+    "accounts"
+  ],
+  "author": "",
+  "license": "MIT",
+  "description": "Manage and switch between multiple Expo/EAS accounts without touching your normal Expo login",
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2",
+    "@napi-rs/keyring": "^2.1.0",
+    "commander": "^14.0.3",
+    "cross-spawn": "^7.0.6",
+    "env-paths": "^4.0.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^26.6.3",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
+  },
+  "type": "module",
+  "bin": {
+    "easw": "dist/cli.js",
+    "easwitch": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20.17"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamgarriTech/eas-switcher.git"
+  },
+  "homepage": "https://github.com/iamgarriTech/eas-switcher#readme",
+  "bugs": {
+    "url": "https://github.com/iamgarriTech/eas-switcher/issues"
+  }
+}
