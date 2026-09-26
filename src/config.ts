@@ -7,6 +7,8 @@ export interface AccountInfo {
   /** Expo username the token belongs to, captured when the account was added. */
   username?: string;
   addedAt: string;
+  /** "login" when easw created the token through `easw add --login`; absent when the user pasted it. */
+  source?: "login";
 }
 
 export interface GlobalConfig {

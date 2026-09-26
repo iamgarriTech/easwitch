@@ -1,12 +1,14 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
+import os from "node:os";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { Command } from "commander";
-import { password } from "@inquirer/prompts";
+import { password, select } from "@inquirer/prompts";
 import pc from "picocolors";
 import { assertValidName, loadConfig, saveConfig, type GlobalConfig } from "./config.js";
 import { EaswError } from "./errors.js";
+import { LOGIN_METHODS, loginForToken, type LoginMethod } from "./login.js";
 import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
 import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
@@ -43,9 +45,22 @@ function openInBrowser(url: string): void {
   child.unref();
 }
 
-async function promptForToken(name: string): Promise<string> {
-  console.log(`Adding account ${pc.bold(`"${name}"`)}\n`);
-  console.log("Create an access token for this Expo account at:");
+type AddMethod = LoginMethod | "token";
+
+function chooseMethod(): Promise<AddMethod> {
+  return select<AddMethod>({
+    message: "How do you want to add this account?",
+    choices: [
+      { name: "Log in with Expo in your browser (recommended)", value: "browser" },
+      { name: "Log in with email or username and password", value: "password" },
+      { name: "Log in with SSO", value: "sso" },
+      { name: "Paste an access token", value: "token" },
+    ],
+  });
+}
+
+async function promptForToken(): Promise<string> {
+  console.log("\nCreate an access token for this Expo account at:");
   console.log(`  ${pc.cyan(pc.underline(TOKEN_URL))}`);
   console.log(pc.dim("  Sign in to the right Expo account in your browser first, so the token belongs to it."));
   console.log(pc.dim("  Press Enter without a token to open the page.\n"));
@@ -68,37 +83,64 @@ function buildProgram(): Command {
 
   program
     .command("add")
-    .description("add an account profile (prompts for an Expo access token)")
+    .description("add an account by logging in to Expo or pasting an access token")
     .argument("<name>", "profile name, e.g. work")
+    .option("--login [method]", `log in to Expo to create the token: ${LOGIN_METHODS.join(", ")} (default: browser)`)
     .option("--token <token>", "access token (prefer the prompt or stdin: flags end up in shell history)")
     .option("--no-verify", "don't check the token against Expo")
     .option("-f, --force", "overwrite an existing profile")
     .addHelpText("after", `\nCreate a token at ${TOKEN_URL}`)
-    .action(async (name: string, opts: { token?: string; verify: boolean; force?: boolean }) => {
+    .action(async (name: string, opts: { login?: string | true; token?: string; verify: boolean; force?: boolean }) => {
       assertValidName(name);
       const cfg = loadConfig();
       if (cfg.accounts[name] && !opts.force) {
         throw new EaswError(`Account "${name}" already exists`, "Use --force to replace its token.");
       }
 
+      if (opts.login && opts.token) throw new EaswError("Use either --login or --token, not both");
+      const login = opts.login === true ? "browser" : opts.login;
+      if (login && !LOGIN_METHODS.includes(login as LoginMethod)) {
+        throw new EaswError(`Unknown login method "${login}"`, `Use one of: ${LOGIN_METHODS.join(", ")}.`);
+      }
+
       let token = opts.token?.trim();
-      if (!token && !process.stdin.isTTY) {
+      let username: string | undefined;
+      let source: "login" | undefined;
+      if (!token && !login && !process.stdin.isTTY) {
         token = await readStdin();
         // No terminal to prompt in (a script, CI or an AI agent), so fail clearly instead.
         if (!token) {
           throw new EaswError("No token provided", `Pass --token <token> or pipe it via stdin. Create one at ${TOKEN_URL}`);
         }
       }
-      if (!token) token = await promptForToken(name);
+      if (!token) {
+        if (!process.stdin.isTTY) throw new EaswError("Logging in needs an interactive terminal", "Use --token instead.");
+        if (!login) console.log(`Adding account ${pc.bold(`"${name}"`)}\n`);
+        const method = (login as LoginMethod | undefined) ?? (await chooseMethod());
+        if (method === "token") {
+          token = await promptForToken();
+        } else {
+          console.log(`\nLog in as the Expo account you want to use for ${pc.bold(`"${name}"`)}.`);
+          if (method !== "password") {
+            console.log(pc.dim("  If your browser is signed in to a different Expo account, switch accounts there."));
+          }
+          console.log(pc.dim("  Your normal Expo login isn't affected.\n"));
+          ({ token, username } = await loginForToken(method, `EASwitch: ${name} on ${os.hostname()}`));
+          source = "login";
+        }
+      }
       if (!token) throw new EaswError("No token provided", `Create one at ${TOKEN_URL}`);
 
-      const username = opts.verify ? await whoamiForToken(token) : undefined;
+      if (!username && opts.verify) username = await whoamiForToken(token);
       await setToken(name, token);
-      cfg.accounts[name] = { username, addedAt: new Date().toISOString() };
+      cfg.accounts[name] = { username, addedAt: new Date().toISOString(), ...(source && { source }) };
       cfg.current ??= name;
       saveConfig(cfg);
 
       ok(`Account "${name}" added${username ? pc.dim(` (Expo user: ${username})`) : ""}`);
+      if (source === "login") {
+        console.log(pc.dim(`  EASwitch created an access token for it on Expo; you can see or revoke it at ${TOKEN_URL}`));
+      }
       if (cfg.current === name && Object.keys(cfg.accounts).length === 1) {
         console.log(pc.dim(`  It's your only account, so it's now the current one.`));
       }
@@ -195,10 +237,14 @@ function buildProgram(): Command {
       const cfg = loadConfig();
       requireAccount(cfg, name);
       await deleteToken(name);
+      const createdByLogin = cfg.accounts[name].source === "login";
       delete cfg.accounts[name];
       if (cfg.current === name) cfg.current = null;
       saveConfig(cfg);
       ok(`Account "${name}" removed`);
+      if (createdByLogin) {
+        console.log(pc.dim(`  The access token EASwitch created is still valid on Expo. Revoke it at ${TOKEN_URL} if you don't need it.`));
+      }
       if (cfg.current === null && Object.keys(cfg.accounts).length) {
         console.log(pc.dim("  No current account now. Pick one with `easw use <name>`."));
       }

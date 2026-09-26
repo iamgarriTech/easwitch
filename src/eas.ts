@@ -33,6 +33,11 @@ function findOnPath(name: string): string | undefined {
  */
 export function resolveEas(): EasCommand {
   if (findOnPath("eas")) return { command: "eas", prefix: [] };
+  return bundledEas();
+}
+
+/** The eas-cli bundled with easwitch. */
+export function bundledEas(): EasCommand {
   const require = createRequire(import.meta.url);
   const pkgFile = require.resolve("eas-cli/package.json");
   const pkg = require(pkgFile) as { version: string; bin: { eas: string } };

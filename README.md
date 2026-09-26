@@ -29,10 +29,7 @@ EAS CLI comes bundled, so you don't need to install it separately. If you alread
 
 ## Quick start
 
-**1. Create an access token for each Expo account.**
-Sign in at [expo.dev](https://expo.dev), open **Account settings → Access tokens** ([direct link](https://expo.dev/settings/access-tokens)) and create a token. Repeat for each account you want to use.
-
-**2. Add the accounts to EASwitch.**
+**1. Add your accounts.**
 
 ```bash
 easw add personal
@@ -40,21 +37,30 @@ easw add work
 easw add client-acme
 ```
 
-Each one shows where to create the token, asks for it, checks it with Expo, and stores it in your system's credential store:
+Each one asks how you want to add the account:
 
 ```text
 Adding account "work"
 
-Create an access token for this Expo account at:
-  https://expo.dev/settings/access-tokens
-  Sign in to the right Expo account in your browser first, so the token belongs to it.
-  Press Enter without a token to open the page.
+? How do you want to add this account?
+❯ Log in with Expo in your browser (recommended)
+  Log in with email or username and password
+  Log in with SSO
+  Paste an access token
+```
 
-✔ Expo access token: ****************
+- **Log in** (browser, email and password, or SSO): EASwitch runs Expo's own login in a temporary, separate session, so your normal Expo login isn't affected. It uses that session to create an access token named `EASwitch: work on <your computer>`, then logs the temporary session out and deletes it. You can see or revoke the token anytime in your [access token settings](https://expo.dev/settings/access-tokens).
+- **Paste an access token**: create one yourself at [expo.dev/settings/access-tokens](https://expo.dev/settings/access-tokens) and paste it. Pressing Enter on an empty prompt opens that page.
+
+Either way, the token is checked with Expo and stored in your system's credential store:
+
+```text
 ✓ Account "work" added (Expo user: jane-acme)
 ```
 
-**3. Pick an account and use it.**
+Sign in as the account you're adding. If your browser is already signed in to a different Expo account, switch accounts there first.
+
+**2. Pick an account and use it.**
 
 ```bash
 easw use work
@@ -63,7 +69,7 @@ easw build
 easw update --branch production
 ```
 
-**4. (Optional) Link projects to accounts** so you never have to think about it:
+**3. (Optional) Link projects to accounts** so you never have to think about it:
 
 ```bash
 cd ~/code/acme-app
@@ -75,7 +81,7 @@ easw build           # always runs as "client-acme" inside this project
 
 | Command | What it does |
 |---|---|
-| `easw add <name>` | Save an account. Prompts for an access token and verifies it with Expo. |
+| `easw add <name>` | Save an account, by logging in to Expo or pasting an access token. |
 | `easw list` | List saved accounts. The current one is marked `●`. |
 | `easw use <name>` | Set the current account. |
 | `easw current` | Show the current account, and the project's linked account if there is one. |
@@ -92,6 +98,9 @@ All arguments after an eas command are passed through untouched, so `easw build 
 ### `add` options
 
 ```bash
+easw add work --login           # log in with the browser, skipping the menu
+easw add work --login password  # log in with email or username and password
+easw add work --login sso       # log in with SSO
 easw add work --token <token>   # non-interactive (note: ends up in shell history)
 echo "$TOKEN" | easw add work   # read the token from stdin
 easw add work --no-verify       # skip checking the token with Expo
@@ -171,8 +180,11 @@ You don't need to. In CI, set `EXPO_TOKEN` as a secret and run `eas` directly. E
 **Why is `easw build` using a different EAS CLI version than I expected?**
 EASwitch uses your global `eas` if one is on your `PATH`, otherwise its bundled copy. The status line says `bundled eas-cli <version>` when the bundled one runs. To use a specific version, install it globally: `npm install -g eas-cli@<version>`.
 
-**What kind of token should I use?**
-A personal access token from your account settings works for everything your account can do. For a narrower scope, use a robot user's token from your organization's settings.
+**Should I log in or paste a token?**
+Logging in is quicker: EASwitch creates the token for you. Pasting a token gives you more control, for example to use a robot user's token from your organization's settings, which you can limit to specific permissions. Both are stored the same way.
+
+**What happens to the token when I remove an account?**
+`easw remove` deletes it from your machine. A token EASwitch created by logging in stays valid on Expo until you revoke it in your [access token settings](https://expo.dev/settings/access-tokens); EASwitch reminds you when you remove the account.
 
 ## Development
 
