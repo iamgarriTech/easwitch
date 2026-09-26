@@ -8,6 +8,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 - `easw add` can log in to Expo (browser, email and password, or SSO) instead of asking you to paste a token. The login runs in a temporary, separate session, so your normal Expo login isn't affected. EASwitch uses it to create an access token, then logs the temporary session out. `--login [browser|password|sso]` skips the menu; pasting a token still works.
 
+### Fixed
+
+- The Expo username saved for a pasted token no longer includes "(authenticated using EXPO_TOKEN)", which newer EAS CLI versions add to `eas whoami`.
+
 ## [0.3.0] - 2026-09-26
 
 ### Added
