@@ -51,6 +51,10 @@ try {
   assert.ok(fs.existsSync(path.join(project, ".easwitch.json")), "link should write at project root");
   assert.match(fs.readFileSync(path.join(project, ".gitignore"), "utf8"), /^\.easwitch\.json$/m);
   assert.equal(ok(printToken, { cwd: nested }), "token-b");
+  const state = JSON.parse(ok(["current", "--json"], { cwd: nested }));
+  assert.deepEqual(state.resolved, { name: b, source: "project" });
+  const list = JSON.parse(ok(["list", "--json"], { cwd: nested }));
+  assert.deepEqual(list.accounts.map((x) => [x.name, x.current, x.linked]), [[a, true, false], [b, false, true]]);
   assert.equal(ok(printToken), "token-a", "outside the project, current account applies");
 
   ok(["use", b]);

@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `easw list --json` and `easw current --json` for scripts and AI agents. `current --json` also reports which account easw would use in the current directory, and why.
+
 ### Changed
 
 - `easw add` shows the token page link prominently, reminds you to sign in to the right Expo account, and opens the page if you press Enter without a token. A rejected token's error also links to it.
