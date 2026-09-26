@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-26
+
 ### Added
 
 - `easw hook` turns on the shell hook with one command. It detects your shell and adds a marked line to its config file; `easw unhook` removes it. `easw shell-init` still prints the script for manual setup.
@@ -87,7 +89,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`.
 - `build`, `update`, `submit` and `whoami` run as the resolved account.
 
-[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/iamgarriTech/easwitch/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/iamgarriTech/easwitch/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/iamgarriTech/easwitch/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/iamgarriTech/easwitch/compare/v0.4.1...v0.5.0
