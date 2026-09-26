@@ -172,11 +172,24 @@ export function uninstallCmdHook(): boolean {
 
 /** Best effort: whether the hook is already in the user's shell config. False when unsure. */
 export function isHookInstalled(): boolean {
-  if (process.platform === "win32") return false; // checking the PowerShell profile means starting PowerShell
+  const hasHook = (file: string) => {
+    try {
+      const contents = fs.readFileSync(file, "utf8");
+      return contents.includes(HOOK_MARKER) || contents.includes("easw shell-init");
+    } catch {
+      return false;
+    }
+  };
+  if (process.platform === "win32") {
+    // Asking PowerShell for $PROFILE is slow, so check cmd's AutoRun and the usual profile paths instead.
+    if (readAutoRun().includes("cmd-hook.cmd")) return true;
+    const home = os.homedir();
+    return [path.join(home, "Documents"), path.join(home, "OneDrive", "Documents")]
+      .flatMap((docs) => ["PowerShell", "WindowsPowerShell"].map((dir) => path.join(docs, dir, "Microsoft.PowerShell_profile.ps1")))
+      .some(hasHook);
+  }
   try {
-    const file = rcFile(detectShell());
-    const contents = fs.readFileSync(file, "utf8");
-    return contents.includes(HOOK_MARKER) || contents.includes("easw shell-init");
+    return hasHook(rcFile(detectShell()));
   } catch {
     return false;
   }

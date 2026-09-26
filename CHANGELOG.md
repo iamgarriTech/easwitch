@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `easw link` offers to set up the shell hook when it isn't set up yet, so plain `eas` commands follow project links too. Press Enter to accept, or pass `--no-hook-prompt` to skip the question. Without a terminal it only prints a tip.
+
+### Changed
+
+- The README, docs website and demo GIF lead with keeping plain `eas`: add your accounts, run `easw hook` once, link each project, then use `eas` as usual. Typing `easw` instead is shown as the alternative.
+- Detecting an existing hook on Windows no longer needs to start PowerShell.
+
 ## [0.7.1] - 2026-09-26
 
 ### Added

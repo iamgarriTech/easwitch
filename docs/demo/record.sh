@@ -8,11 +8,25 @@ here="$(cd "$(dirname "$0")" && pwd)"
 repo="$(cd "$here/../.." && pwd)"
 work="$(mktemp -d)"
 export EASWITCH_CONFIG_DIR="$work/config"
+# `easw link` offers to set up the shell hook. Point zsh's config folder somewhere other than
+# your real ~/.zshrc: ~/.config/zsh reads nicely on screen, but only if it doesn't exist yet
+# (it's created for the recording and removed afterwards); otherwise a temp dir.
+export SHELL=/bin/zsh
+if [ ! -e "$HOME/.config/zsh" ]; then
+  [ -e "$HOME/.config" ] || created_config=1
+  export ZDOTDIR="$HOME/.config/zsh"
+  created_zdotdir=1
+else
+  export ZDOTDIR="$work/zdot"
+fi
+mkdir -p "$ZDOTDIR" && touch "$ZDOTDIR/.zshrc"
 
 easw() { node "$repo/dist/cli.js" "$@"; }
 cleanup() {
   for name in personal work client-acme; do easw remove "$name" >/dev/null 2>&1 || true; done
   rm -rf "$work"
+  if [ -n "${created_zdotdir:-}" ]; then rm -rf "$ZDOTDIR"; fi
+  if [ -n "${created_config:-}" ]; then rmdir "$HOME/.config" 2>/dev/null || true; fi
 }
 trap cleanup EXIT
 
