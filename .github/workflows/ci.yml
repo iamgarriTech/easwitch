@@ -53,6 +53,24 @@ jobs:
           easw unhook powershell
           if (Select-String -Path $profilePath -Pattern "easw shell-init powershell" -Quiet) { throw "easw unhook didn't clean $profilePath" }
 
+      - name: Shell hook (cmd)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $key = "HKCU:\Software\Microsoft\Command Processor"
+          easw hook cmd
+          $autorun = (Get-ItemProperty $key -ErrorAction SilentlyContinue).AutoRun
+          if ("$autorun" -notmatch "cmd-hook\.cmd") { throw "AutoRun not set: $autorun" }
+          $file = ($autorun -split '"')[1]
+          if (-not (Select-String -Path $file -Pattern "doskey eas=easw __shell-eas" -Quiet)) { throw "hook file missing the macro: $file" }
+          cmd /d /c "`"$file`""
+          if ($LASTEXITCODE -ne 0) { throw "hook file failed to run" }
+          Write-Output "doskey macros: $(cmd /c 'doskey /macros')"
+          easw unhook cmd
+          $autorun = (Get-ItemProperty $key -ErrorAction SilentlyContinue).AutoRun
+          if ("$autorun" -match "cmd-hook") { throw "unhook left AutoRun: $autorun" }
+          if (Test-Path $file) { throw "unhook left $file" }
+
       - name: Shell hook (fish, bash)
         if: runner.os == 'Linux'
         run: |

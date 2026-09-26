@@ -5,19 +5,41 @@
 [![npm](https://img.shields.io/npm/v/easwitch)](https://www.npmjs.com/package/easwitch)
 [![CI](https://github.com/iamgarriTech/easwitch/actions/workflows/ci.yml/badge.svg)](https://github.com/iamgarriTech/easwitch/actions/workflows/ci.yml)
 
-If you build apps for yourself, your company and a couple of clients, you know the routine: `eas logout`, `eas login`, run a build, switch back. EASwitch removes that. You save each account once, and every `easw` command runs under the right one, picked from the project you're in or the account you've selected.
+If you build apps for yourself, your company and a couple of clients, you know the routine: `eas logout`, `eas login`, run a build, switch back. EASwitch removes that. You save each account once, and every `easw` command runs as the right one, picked from the project you're in or the account you've selected.
 
 Your normal Expo login is never touched. `eas build`, `eas whoami` and `expo start` keep working exactly as before.
 
 ![EASwitch demo: listing accounts, adding one, switching, and building a linked project](https://raw.githubusercontent.com/iamgarriTech/easwitch/main/docs/demo/demo.gif)
 
-```bash
-easw add work               # save an account once
-easw use work               # select it
+## Quick start
 
-easw build --platform ios   # runs `eas build` as "work"
-eas whoami                  # still your normal login
+```bash
+npm install -g easwitch       # install (EAS CLI is included)
+
+easw add personal             # save an account: log in, or paste an access token
+easw add work
+
+easw use work                 # choose which account easw uses
+easw build --platform ios     # run any EAS command as that account
+
+cd ~/code/acme-app
+easw link work                # this project always uses "work"
+
+easw hook                     # optional: make plain `eas` use the linked account too
 ```
+
+## Contents
+
+- [Install](#install)
+- [Getting started](#getting-started)
+- [Command reference](#command-reference)
+- [Use plain `eas` in linked projects](#use-plain-eas-in-linked-projects)
+- [Which account is used?](#which-account-is-used)
+- [How it works](#how-it-works)
+- [Where things are stored](#where-things-are-stored)
+- [Environment variables](#environment-variables)
+- [Scripts and AI agents](#scripts-and-ai-agents)
+- [FAQ](#faq)
 
 ## Install
 
@@ -25,13 +47,15 @@ eas whoami                  # still your normal login
 npm install -g easwitch
 ```
 
-This gives you two commands, `easw` and `easwitch` (identical). Install globally (`-g`) so the commands are on your `PATH`. Requires Node.js 20.18+ or 22+.
+This gives you two commands, `easw` and `easwitch`, which are identical. Install globally (`-g`) so the commands are on your `PATH`. Requires Node.js 20.18+ or 22+, on macOS, Windows or Linux.
 
 EAS CLI comes bundled, so you don't need to install it separately. If you already have `eas` installed globally, EASwitch uses yours instead, so `easw build` and `eas build` always run the same version.
 
-## Quick start
+To update: `npm install -g easwitch@latest`.
 
-**1. Add your accounts.**
+## Getting started
+
+### 1. Add your accounts
 
 ```bash
 easw add personal
@@ -62,64 +86,200 @@ Either way, the token is checked with Expo and stored in your system's credentia
 
 Sign in as the account you're adding. If your browser is already signed in to a different Expo account, switch accounts there first.
 
-**2. Pick an account and use it.**
+The first account you add becomes the current one.
+
+### 2. Choose an account and use it
 
 ```bash
-easw use work
-easw whoami          # shows the "work" user
-easw build
+easw use work                     # or just `easw use` to pick from a list
+easw whoami                       # shows the "work" user
+easw build --platform ios
 easw update --branch production
 ```
 
-**3. (Optional) Link projects to accounts** so you never have to think about it:
+### 3. Link projects to accounts (optional)
 
 ```bash
 cd ~/code/acme-app
 easw link client-acme
-easw build           # always runs as "client-acme" inside this project
+easw build                        # always runs as "client-acme" in this project
 ```
 
-## Commands
+A linked project uses its account in every subfolder, whatever account you've chosen with `easw use`.
 
-| Command | What it does |
-|---|---|
-| `easw add <name>` | Save an account, by logging in to Expo or pasting an access token. |
-| `easw list` | List saved accounts. The current one is marked `●`. Add `--check` to test each token with Expo and flag revoked or expired ones. |
-| `easw use [name]` | Set the current account. Without a name, pick from a list. |
-| `easw current` | Show the current account, and the project's linked account if there is one. |
-| `easw remove <name>` | Delete an account and its stored token. |
-| `easw link <name>` | Link the current project to an account. |
-| `easw unlink` | Remove the current project's link. |
-| `easw hook` / `easw unhook` | Turn the shell hook on or off, so plain `eas` uses the linked account in linked projects. See [below](#use-plain-eas-in-linked-projects-optional). |
-| `easw shell-init [shell]` | Print the hook script, to add to your shell config yourself. |
-| `easw exec <command...>` | Run any command with the selected account, e.g. `easw exec npx expo-doctor`. |
-| `easw <eas command>` | Any other command is passed to EAS CLI as the selected account: `easw build`, `easw submit`, `easw env:list`, `easw credentials`, `easw build:list`… |
-
-All arguments after an eas command are passed through untouched, so `easw build --platform android --profile preview` works exactly like the `eas` version.
-
-`easw login` and `easw logout` are deliberately blocked, since they would change your normal Expo login. Use `eas login` for that.
-
-### `add` options
-
-```bash
-easw add work --login           # log in with the browser, skipping the menu
-easw add work --login password  # log in with email or username and password
-easw add work --login sso       # log in with SSO
-easw add work --token <token>   # non-interactive (note: ends up in shell history)
-echo "$TOKEN" | easw add work   # read the token from stdin
-easw add work --no-verify       # skip checking the token with Expo
-easw add work --force           # replace the token of an existing account
-```
-
-## Use plain `eas` in linked projects (optional)
-
-By default, plain `eas` always uses your normal Expo login. If you'd rather type `eas` everywhere, turn on EASwitch's shell hook:
+### 4. Use plain `eas` too (optional)
 
 ```bash
 easw hook
 ```
 
-Then open a new terminal. Inside projects you've linked with `easw link`, plain `eas` runs as the linked account. Everywhere else, it's your normal `eas`.
+Open a new terminal. Now plain `eas` also uses the linked account inside linked projects. See [Use plain `eas` in linked projects](#use-plain-eas-in-linked-projects).
+
+## Command reference
+
+| Command | What it does |
+|---|---|
+| [`easw add <name>`](#easw-add) | Save an account, by logging in to Expo or pasting an access token |
+| [`easw list`](#easw-list) | List your accounts, and optionally check their tokens |
+| [`easw use [name]`](#easw-use) | Choose the current account |
+| [`easw current`](#easw-current) | Show the current account and the project's linked account |
+| [`easw remove <name>`](#easw-remove) | Delete an account and its token |
+| [`easw link <name>`](#easw-link) | Link the current project to an account |
+| [`easw unlink`](#easw-unlink) | Remove the current project's link |
+| [`easw <eas command>`](#easw-eas-command) | Run any EAS CLI command as the selected account |
+| [`easw exec <command>`](#easw-exec) | Run any other program as the selected account |
+| [`easw hook` / `easw unhook`](#easw-hook--easw-unhook) | Turn the shell hook for plain `eas` on or off |
+| [`easw shell-init [shell]`](#easw-shell-init) | Print the shell hook script |
+
+Every command has built-in help: `easw --help`, or `easw <command> --help`. `easw --version` prints the version.
+
+### `easw add`
+
+```text
+easw add <name> [--login [browser|password|sso]] [--token <token>] [--no-verify] [--force]
+```
+
+Saves an account under `<name>`. Without options, it asks how you want to add the account (see [Getting started](#1-add-your-accounts)).
+
+| Option | What it does |
+|---|---|
+| `--login [method]` | Log in to Expo instead of pasting a token, skipping the menu. `method` is `browser` (default), `password` or `sso`. |
+| `--token <token>` | Use this access token without prompting. It ends up in your shell history, so prefer the prompt or stdin. |
+| `--no-verify` | Don't check the token with Expo before saving it. |
+| `-f`, `--force` | Replace the token of an account that already exists. |
+
+You can also pipe a token in: `echo "$TOKEN" | easw add work`. Without a terminal (in a script, CI or an AI agent), `easw add` needs `--token` or a piped token, and fails with a clear message otherwise. Logging in always needs a terminal.
+
+Account names can use letters, numbers, dots, dashes and underscores, start with a letter or number, and be up to 64 characters.
+
+### `easw list`
+
+```text
+easw list [--check] [--json]        (alias: easw ls)
+```
+
+Lists your accounts. The current account is marked `●`, and the account linked to the project you're in is marked `(linked to this project)`.
+
+| Option | What it does |
+|---|---|
+| `--check` | Ask Expo whether each stored token still works, and flag revoked or expired ones. Exits with code 1 if any are invalid. Also fills in missing usernames. |
+| `--json` | Print machine-readable JSON (see [Scripts and AI agents](#scripts-and-ai-agents)). With `--check`, each account also gets `valid` and `error`. |
+
+```text
+● work      jane-acme  ✓ valid
+○ client    ✗ The bearer token is invalid.
+
+Replace a token with `easw add client --force`.
+```
+
+### `easw use`
+
+```text
+easw use [name]
+```
+
+Sets the current account: the one easw uses outside linked projects. Without a name, it shows a list to pick from. It doesn't change your normal `eas` login.
+
+If you run it inside a project linked to a different account, easw reminds you that the project's link takes priority there.
+
+### `easw current`
+
+```text
+easw current [--json]
+```
+
+Shows the current account, and the linked account if you're inside a linked project. With `--json`, it also reports which account easw would actually use here, and why (see [Scripts and AI agents](#scripts-and-ai-agents)).
+
+### `easw remove`
+
+```text
+easw remove <name>        (alias: easw rm)
+```
+
+Deletes the account and its token from your machine. If it was the current account, there's no current account until you run `easw use`.
+
+A token that EASwitch created by logging in stays valid on Expo until you revoke it in your [access token settings](https://expo.dev/settings/access-tokens). EASwitch reminds you when you remove such an account.
+
+### `easw link`
+
+```text
+easw link <name>
+```
+
+Links the project you're in to an account. EASwitch writes a small `.easwitch.json` file (`{ "account": "work" }`) at the project root: the nearest folder containing `eas.json`, `app.json`, `app.config.js`, `app.config.ts` or `package.json`. The link applies in every subfolder.
+
+If the project has a `.gitignore`, EASwitch adds `.easwitch.json` to it, because account names are personal and your teammates may name theirs differently. If your team agrees on names, you can remove that line and commit the file.
+
+### `easw unlink`
+
+```text
+easw unlink
+```
+
+Removes the project's `.easwitch.json`, so easw goes back to using the current account there.
+
+### `easw <eas command>`
+
+```text
+easw <eas command> [arguments...]
+```
+
+Any command that isn't one of EASwitch's own is passed to EAS CLI, as the selected account, with every argument untouched:
+
+```bash
+easw build --platform android --profile preview
+easw update --branch production --message "Fix login"
+easw submit --platform ios
+easw whoami
+easw env:list --environment production
+easw credentials
+easw build:list
+```
+
+`easw login`, `easw logout`, `easw account:login` and `easw account:logout` are blocked, because they would change your normal Expo login. Use `eas login` for that. To add an account, use `easw add`.
+
+### `easw exec`
+
+```text
+easw exec [--] <command> [arguments...]
+```
+
+Runs any program with the selected account's token set as `EXPO_TOKEN`, for tools other than EAS CLI or your own scripts:
+
+```bash
+easw exec npm run release
+easw exec npx eas-cli@latest build
+easw exec -- node scripts/deploy.js --dry-run
+```
+
+Everything after `exec` is passed to the program untouched; the `--` is optional.
+
+### `easw hook` / `easw unhook`
+
+```text
+easw hook [shell]
+easw unhook [shell]
+```
+
+`easw hook` makes plain `eas` use the linked account inside linked projects, by adding a line to your shell's startup file. `easw unhook` removes it. `shell` is `zsh`, `bash`, `fish`, `powershell` or `cmd`; by default EASwitch uses your current shell, and on Windows it sets up both PowerShell and Command Prompt. See [Use plain `eas` in linked projects](#use-plain-eas-in-linked-projects).
+
+### `easw shell-init`
+
+```text
+easw shell-init [shell]
+```
+
+Prints the shell code behind the hook, without changing anything, for people who prefer to edit their shell config themselves. See [Setting it up yourself](#setting-it-up-yourself).
+
+## Use plain `eas` in linked projects
+
+By default, plain `eas` always uses your normal Expo login, and only `easw` commands switch accounts. If you'd rather type `eas` everywhere, turn on the shell hook:
+
+```bash
+easw hook
+```
+
+Then open a new terminal. Inside projects you've linked with `easw link`, plain `eas` now runs as the linked account. Everywhere else, it's your normal `eas`.
 
 ```text
 $ cd ~/code/acme-app       # linked to client-acme
@@ -133,16 +293,45 @@ jane
 - The `› easw:` line shows whenever plain `eas` is running as a linked account.
 - `eas login` and `eas logout` always go to your normal session.
 - If you don't have EAS CLI installed globally, plain `eas` uses the copy bundled with EASwitch.
+- The hook applies to interactive terminals. Scripts should call `easw` directly.
 
-To turn it off, run `easw unhook`.
+To turn it off, run `easw unhook` and open a new terminal.
 
-`easw hook` works with zsh, bash, fish and PowerShell, and detects your shell automatically (or pass one, e.g. `easw hook fish`). It adds a marked line to your shell config (`~/.zshrc`, `~/.bash_profile` on macOS or `~/.bashrc` on Linux, fish's `config.fish`, or your PowerShell profile). To add the hook yourself instead, put the output of `easw shell-init` in your config: for example `eval "$(easw shell-init)"` in `~/.zshrc`.
+### `easw hook` and `easw shell-init`: what's the difference?
+
+- **`easw shell-init`** only *prints* the small piece of shell code that sends plain `eas` through EASwitch. It doesn't change anything.
+- **`easw hook`** *installs* it for you: it adds one line to your shell's startup file so the code loads in every new terminal. `easw unhook` removes that line.
+
+Most people only need `easw hook`.
+
+### Supported shells
+
+| Shell | Where `easw hook` adds the hook |
+|---|---|
+| zsh | `~/.zshrc` |
+| bash | `~/.bash_profile` on macOS, `~/.bashrc` on Linux |
+| fish | `~/.config/fish/config.fish` |
+| PowerShell | Your PowerShell profile (`$PROFILE`) |
+| Command Prompt (cmd) | A `doskey` macro, loaded through cmd's AutoRun setting (`HKCU\Software\Microsoft\Command Processor`). Any AutoRun command you already have is kept. |
+
+EASwitch detects your shell automatically. To choose one, name it: `easw hook fish`. On Windows, `easw hook` sets up both PowerShell and Command Prompt.
+
+### Setting it up yourself
+
+If you'd rather edit your config by hand, add the line for your shell instead of running `easw hook`:
+
+| Shell | Add this line |
+|---|---|
+| zsh (`~/.zshrc`), bash (`~/.bashrc`) | `eval "$(easw shell-init)"` |
+| fish (`config.fish`) | `easw shell-init fish \| source` |
+| PowerShell (`$PROFILE`) | `easw shell-init powershell \| Out-String \| Invoke-Expression` |
+| Command Prompt | `doskey eas=easw __shell-eas $*` in a script run by AutoRun |
 
 ## Which account is used?
 
 Every `easw` command picks an account in this order:
 
-1. **The project's linked account.** EASwitch looks for a `.easwitch.json` in the current directory and its parents, so it works from any subfolder.
+1. **The project's linked account.** EASwitch looks for a `.easwitch.json` in the current folder and its parents, so it works from any subfolder.
 2. **The current account**, set with `easw use`.
 
 Before running, EASwitch prints which account it picked, and why:
@@ -151,7 +340,7 @@ Before running, EASwitch prints which account it picked, and why:
 › easw: using account "client-acme" (linked in .easwitch.json)
 ```
 
-This line goes to stderr, so piping the command's output still works.
+This line goes to stderr, so piping the command's output still works. When the bundled EAS CLI runs, the line also says `bundled eas-cli <version>`.
 
 If a project is linked to an account you don't have (for example, after `easw remove`), the command stops with an error instead of falling back to your current account, so you never build or publish under the wrong account by accident.
 
@@ -170,12 +359,19 @@ Nothing is written to your shell, your Expo login (`~/.expo/state.json`), or you
 | What | Where |
 |---|---|
 | Access tokens | Your OS credential store: **macOS** Keychain, **Windows** Credential Manager, **Linux** Secret Service (GNOME Keyring, KWallet) |
-| Account list and current account | `config.json` in your OS config directory, e.g. `~/Library/Preferences/easwitch/` on macOS. No tokens. |
-| Project link | `.easwitch.json` in the project root: `{ "account": "work" }`. No tokens. |
-
-`easw link` adds `.easwitch.json` to your project's `.gitignore` if one exists, because account names are personal and your teammates may name theirs differently. If your team agrees on names, you can remove that line and commit the file.
+| Account list and current account | `config.json` in your OS config folder, e.g. `~/Library/Preferences/easwitch/` on macOS. No tokens. |
+| Project link | `.easwitch.json` in the project root. No tokens. |
+| Shell hook | One marked line in your shell's startup file, or for Command Prompt a small script in EASwitch's config folder plus an AutoRun entry |
 
 On Linux, a Secret Service provider (such as GNOME Keyring or KWallet) must be running and unlocked. EASwitch won't store tokens in a plain file.
+
+## Environment variables
+
+| Variable | Effect |
+|---|---|
+| `EASWITCH_CONFIG_DIR` | Use this folder for EASwitch's config instead of the default. Handy for testing without touching your real accounts. |
+| `EXPO_TOKEN` | If it's already set in your shell, EASwitch overrides it for the commands it runs, and prints a warning. |
+| `NO_COLOR` | Turn off colored output. |
 
 ## Scripts and AI agents
 
@@ -188,6 +384,8 @@ easw list --check     # test every token with Expo; exits 1 if any are invalid
 echo "$TOKEN" | easw add work   # add an account non-interactively
 ```
 
+`easw current --json` returns:
+
 ```json
 {
   "current": "personal",
@@ -197,26 +395,34 @@ echo "$TOKEN" | easw add work   # add an account non-interactively
 }
 ```
 
-Wrapped commands keep their exit codes and stdout, and easw's own status line goes to stderr. Without a terminal, `easw add` fails with a clear message rather than waiting for input.
+`resolved.source` is `project` or `current`. When no account can be used, `resolved` is `null` and `error` says why.
+
+**Exit codes:** commands run through easw return their own exit code. easw's own errors exit with 1, `easw list --check` exits with 1 if any token is invalid, and pressing Ctrl+C at a prompt exits with 130.
 
 If you're using an AI assistant to work on EASwitch itself, [AGENTS.md](AGENTS.md) gives it an overview of the codebase.
 
 ## FAQ
 
 **Does this log me out of Expo?**
-No. EASwitch never runs `eas login` or `eas logout` and never touches your saved Expo session.
-
-**Can I use it in CI?**
-You don't need to. In CI, set `EXPO_TOKEN` as a secret and run `eas` directly. EASwitch is for developer machines with several accounts.
-
-**Why is `easw build` using a different EAS CLI version than I expected?**
-EASwitch uses your global `eas` if one is on your `PATH`, otherwise its bundled copy. The status line says `bundled eas-cli <version>` when the bundled one runs. To use a specific version, install it globally: `npm install -g eas-cli@<version>`.
+No. EASwitch never runs `eas login` or `eas logout` against your normal session and never touches `~/.expo`.
 
 **Should I log in or paste a token?**
 Logging in is quicker: EASwitch creates the token for you. Pasting a token gives you more control, for example to use a robot user's token from your organization's settings, which you can limit to specific permissions. Both are stored the same way.
 
 **What happens to the token when I remove an account?**
-`easw remove` deletes it from your machine. A token EASwitch created by logging in stays valid on Expo until you revoke it in your [access token settings](https://expo.dev/settings/access-tokens); EASwitch reminds you when you remove the account.
+`easw remove` deletes it from your machine. A token EASwitch created by logging in stays valid on Expo until you revoke it in your [access token settings](https://expo.dev/settings/access-tokens).
+
+**How do I know if a token stopped working?**
+Run `easw list --check`. Replace a broken token with `easw add <name> --force`.
+
+**Can I use it in CI?**
+You don't need to. In CI, set `EXPO_TOKEN` as a secret and run `eas` directly. EASwitch is for developer machines with several accounts.
+
+**Which EAS CLI version does it use?**
+Your global `eas` if one is on your `PATH`, otherwise the copy bundled with EASwitch. The status line says `bundled eas-cli <version>` when the bundled one runs. To use a specific version, install it globally: `npm install -g eas-cli@<version>`.
+
+**Should I commit `.easwitch.json`?**
+Usually not, since account names are personal. That's why `easw link` adds it to `.gitignore`. If your whole team uses the same account names, committing it is fine.
 
 ## Development
 
@@ -231,7 +437,7 @@ npm run typecheck
 npm run smoke        # end-to-end check against your real credential store (cleans up after itself)
 ```
 
-Set `EASWITCH_CONFIG_DIR` to use a throwaway config directory while testing.
+Set `EASWITCH_CONFIG_DIR` to use a throwaway config folder while testing.
 
 ## Contributing
 

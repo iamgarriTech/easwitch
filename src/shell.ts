@@ -2,15 +2,21 @@ import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { configDir } from "./config.js";
 import { EaswError } from "./errors.js";
 import { findProjectLink } from "./project.js";
 import { SHELL_EAS, isLoginCommand } from "./route.js";
 import { runEasPlain, runWithAccount } from "./run.js";
 
-export const SHELLS = ["zsh", "bash", "fish", "powershell"] as const;
+export const SHELLS = ["zsh", "bash", "fish", "powershell", "cmd"] as const;
 export type Shell = (typeof SHELLS)[number];
 
 const COMMENT = "EASwitch shell hook: inside projects linked with `easw link`, plain `eas` runs as the linked account.";
+
+/** Shells `easw hook` sets up when none is named: on Windows both PowerShell and Command Prompt. */
+export function defaultHookShells(): Shell[] {
+  return process.platform === "win32" ? ["powershell", "cmd"] : [detectShell()];
+}
 
 export function detectShell(): Shell {
   if (process.platform === "win32") return "powershell";
@@ -29,6 +35,9 @@ export function shellInit(shell: Shell): string {
       return `# ${COMMENT}\nfunction eas --description 'eas, as the linked EASwitch account in linked projects'\n    command easw ${SHELL_EAS} $argv\nend\n`;
     case "powershell":
       return `# ${COMMENT}\nfunction eas { easw ${SHELL_EAS} @args }\n`;
+    case "cmd":
+      // cmd has no functions; a doskey macro is its equivalent for interactive sessions.
+      return `@rem ${COMMENT}\n@doskey eas=easw ${SHELL_EAS} $*\n`;
   }
 }
 
@@ -55,6 +64,8 @@ function hookLine(shell: Shell): string {
       return "easw shell-init fish | source";
     case "powershell":
       return "easw shell-init powershell | Out-String | Invoke-Expression";
+    case "cmd":
+      return `doskey eas=easw ${SHELL_EAS} $*`;
   }
 }
 
@@ -83,6 +94,9 @@ export function rcFile(shell: Shell): string {
       return path.join(process.env.XDG_CONFIG_HOME ?? path.join(home, ".config"), "fish", "config.fish");
     case "powershell":
       return powershellProfile();
+    case "cmd":
+      // Loaded by cmd's AutoRun setting; see installCmdHook.
+      return path.join(configDir(), "cmd-hook.cmd");
   }
 }
 
@@ -106,5 +120,51 @@ export function uninstallHook(file: string): boolean {
   const start = i > 0 && lines[i - 1] === "" ? i - 1 : i;
   lines.splice(start, i + 2 - start);
   fs.writeFileSync(file, lines.join("\n"));
+  return true;
+}
+
+// Command Prompt: cmd runs the registry's AutoRun command at startup. easw adds a
+// call to its own hook file there, next to any AutoRun command already set.
+const AUTORUN_KEY = "HKCU\\Software\\Microsoft\\Command Processor";
+
+function readAutoRun(): string {
+  const r = spawnSync("reg", ["query", AUTORUN_KEY, "/v", "AutoRun"], { encoding: "utf8" });
+  if (r.status !== 0) return "";
+  return r.stdout.match(/AutoRun\s+REG_(?:EXPAND_)?SZ\s+(.*)/)?.[1]?.trim() ?? "";
+}
+
+function writeAutoRun(value: string): void {
+  const args = value
+    ? ["add", AUTORUN_KEY, "/v", "AutoRun", "/t", "REG_SZ", "/d", value, "/f"]
+    : ["delete", AUTORUN_KEY, "/v", "AutoRun", "/f"];
+  const r = spawnSync("reg", args, { encoding: "utf8" });
+  if (r.status !== 0) throw new EaswError(`Couldn't update cmd's AutoRun setting: ${(r.stderr || r.stdout).trim()}`);
+}
+
+/** Add the doskey hook to Command Prompt. Returns false when it was already there. */
+export function installCmdHook(): boolean {
+  const file = rcFile("cmd");
+  const call = `"${file}"`;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `@rem ${HOOK_MARKER}\r\n@${hookLine("cmd")}\r\n`);
+  const current = readAutoRun();
+  if (current.includes(call)) return false;
+  writeAutoRun(current ? `${current} & ${call}` : call);
+  return true;
+}
+
+/** Remove the doskey hook from Command Prompt. Returns false when it wasn't there. */
+export function uninstallCmdHook(): boolean {
+  const file = rcFile("cmd");
+  const call = `"${file}"`;
+  const current = readAutoRun();
+  fs.rmSync(file, { force: true });
+  if (!current.includes(call)) return false;
+  const rest = current
+    .split("&")
+    .map((part) => part.trim())
+    .filter((part) => part && part !== call)
+    .join(" & ");
+  writeAutoRun(rest);
   return true;
 }
