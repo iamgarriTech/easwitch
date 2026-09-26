@@ -397,6 +397,8 @@ easw submit
 
 easw whoami
 
+easw <any-eas-command>   # e.g. easw env:list, easw build:list
+
 easw exec <command>
 ```
 
@@ -415,7 +417,7 @@ easw add <name> --no-verify       # skip checking the token against Expo
 easw add <name> --force           # replace an existing profile's token
 ```
 
-`easw build|update|submit|whoami` forward every argument to `eas` untouched, including `--help`.
+Any subcommand that isn't an easw command is forwarded to `eas` with every argument untouched, including `--help`.
 
 ## Technical Approach
 
@@ -444,7 +446,9 @@ Credential store entries use service `easwitch` and the profile name as the acco
 
 ## Decisions
 
-- **Only the listed eas commands are wrapped.** EASwitch isn't a replacement for EAS CLI, so `easw` exposes only `build`, `update`, `submit` and `whoami`. Unknown subcommands are errors rather than being forwarded. Any other command runs through `easw exec`, e.g. `easw exec eas env:list`.
+- **Any eas command can run as the selected account.** EASwitch handles its own commands (`add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`, `help`) and forwards every other subcommand to `eas` unchanged, so `easw build:list`, `easw env:list` and `easw credentials` all work. EASwitch only supplies the account; `eas` does the work, so this is a layer on top of EAS CLI, not a replacement. An allowlist was rejected because it made `easw build` work but `easw build:list` fail, and it would need updating whenever eas adds commands.
+- **`login`, `logout`, `account:login` and `account:logout` are blocked**, since they write the normal Expo session that EASwitch must never touch.
+- **`easw --help` lists only easw's own commands**, with one line noting that other eas commands are forwarded.
 - **`.easwitch.json` is gitignored by default.** Profile names are personal, so teammates may not share them. `easw link` appends the file to an existing `.gitignore` in the project root. Teams that agree on names can remove that line and commit it.
 - **No plaintext fallback when no keyring is available.** It would break the secure-storage guarantee. EASwitch targets developer machines; CI should set `EXPO_TOKEN` directly.
 

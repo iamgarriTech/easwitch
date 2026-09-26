@@ -7,7 +7,7 @@ import pc from "picocolors";
 import { assertValidName, loadConfig, saveConfig, type GlobalConfig } from "./config.js";
 import { EaswError } from "./errors.js";
 import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
-import { EAS_COMMANDS, route } from "./route.js";
+import { route } from "./route.js";
 import { runWithAccount, whoamiForToken } from "./run.js";
 import { deleteToken, setToken } from "./tokens.js";
 
@@ -168,11 +168,12 @@ function buildProgram(): Command {
       ok("Project account removed");
     });
 
-  // Registered for --help only; main() routes these before commander parses.
-  for (const sub of EAS_COMMANDS) {
-    program.command(sub).description(`run \`eas ${sub}\` as the resolved account`);
-  }
-  program.command("exec").argument("<command...>").description("run any command as the resolved account");
+  // Registered for --help only; main() routes exec before commander parses.
+  program.command("exec").argument("<command...>").description("run any command as the selected account");
+  program.addHelpText(
+    "after",
+    "\nAny other eas command runs as the selected account, e.g. `easw build` or `easw env:list`.",
+  );
 
   return program;
 }

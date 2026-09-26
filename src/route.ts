@@ -1,18 +1,27 @@
 import { EaswError } from "./errors.js";
 
-/** eas commands easw runs as the resolved account. Anything else needs `easw exec eas ...`. */
-export const EAS_COMMANDS = ["build", "update", "submit", "whoami"];
+/** Subcommands easw handles itself (keep in sync with buildProgram). Anything else goes to eas. */
+export const EASW_COMMANDS = ["add", "list", "ls", "use", "current", "remove", "rm", "link", "unlink", "help"];
+
+/** eas commands that write the normal Expo session, which EASwitch must never touch. */
+const BLOCKED = ["login", "logout", "account:login", "account:logout"];
 
 export type Route = { kind: "easw" } | { kind: "run"; command: string; args: string[] };
 
 export function route(argv: string[]): Route {
   const [sub, ...rest] = argv;
-  // Forward verbatim so flags like --platform or --help reach eas untouched.
-  if (EAS_COMMANDS.includes(sub)) return { kind: "run", command: "eas", args: argv };
+  if (sub === undefined || sub.startsWith("-") || EASW_COMMANDS.includes(sub)) return { kind: "easw" };
   if (sub === "exec") {
     const args = rest[0] === "--" ? rest.slice(1) : rest;
     if (!args.length) throw new EaswError("Usage: easw exec <command> [args...]");
     return { kind: "run", command: args[0], args: args.slice(1) };
   }
-  return { kind: "easw" };
+  if (BLOCKED.includes(sub)) {
+    throw new EaswError(
+      `\`easw ${sub}\` isn't supported: it would change your normal Expo login`,
+      "Add accounts with `easw add <name>`. For your normal session, use `eas login` directly.",
+    );
+  }
+  // Forward verbatim so flags like --platform or --help reach eas untouched.
+  return { kind: "run", command: "eas", args: argv };
 }

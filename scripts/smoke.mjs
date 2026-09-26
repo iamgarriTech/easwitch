@@ -36,7 +36,9 @@ try {
   ok(["exec", "npm", "--version"]);
   assert.equal(easw(["exec", "node", "-e", "process.exit(7)"]).status, 7);
   assert.equal(easw(["exec", "definitely-not-a-command"]).status, 1);
-  assert.equal(easw(["login"]).status, 1, "unknown commands are not forwarded to eas");
+  const login = easw(["login"]);
+  assert.equal(login.status, 1);
+  assert.match(login.stderr, /normal Expo login/);
 
   const project = path.join(tmp, "project");
   const nested = path.join(project, "src", "screens");
