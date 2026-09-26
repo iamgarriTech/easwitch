@@ -72,8 +72,9 @@ try {
   assert.equal(easw(["__shell-eas", "--version"]).status, 0);
 
   // easw env: sets EXPO_TOKEN to the linked account; stdout is a pipe here, so it prints.
-  assert.equal(ok(["env"], { cwd: nested }).trim(), "export EXPO_TOKEN='token-b'");
-  assert.equal(ok(["env", "--unset"]).trim(), "unset EXPO_TOKEN");
+  assert.equal(ok(["env", "bash"], { cwd: nested }).trim(), "export EXPO_TOKEN='token-b'");
+  assert.equal(ok(["env", "powershell"], { cwd: nested }).trim(), "$env:EXPO_TOKEN = 'token-b'");
+  assert.equal(ok(["env", "bash", "--unset"]).trim(), "unset EXPO_TOKEN");
 
   // easw current warns when plain `eas` won't follow the link, and not when the hook is active.
   assert.match(ok(["current"], { cwd: nested }), /Plain `eas` here still uses your normal Expo login/);

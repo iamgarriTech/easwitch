@@ -430,14 +430,22 @@ function buildProgram(): Command {
   program
     .command("env")
     .description('print shell code that sets EXPO_TOKEN to the account easw would use here, for `eval "$(easw env)"`')
-    .argument("[shell]", `${SHELLS.join(", ")} (default: sh-compatible; PowerShell on Windows)`)
+    .argument("[shell]", `${SHELLS.join(", ")} (default: from $SHELL, else PowerShell on Windows and sh elsewhere)`)
     .option("--unset", "print code that clears EXPO_TOKEN instead")
     .addHelpText(
       "after",
       `\nThe token stays set in that shell until it exits or you run the --unset code. Load it with:\n  sh/bash/zsh:  ${envUsage("bash")}\n  fish:         ${envUsage("fish")}\n  PowerShell:   ${envUsage("powershell")}\n  cmd:          ${envUsage("cmd")}`,
     )
     .action(async (shell: string | undefined, opts: { unset?: boolean }) => {
-      const sh: Shell = shell ? parseShell(shell) : process.platform === "win32" ? "powershell" : "bash";
+      // $SHELL first, so Git Bash on Windows gets sh syntax; otherwise PowerShell on Windows.
+      const fromEnv = path.basename(process.env.SHELL ?? "").replace(/\.exe$/, "");
+      const sh: Shell = shell
+        ? parseShell(shell)
+        : fromEnv === "fish" || fromEnv === "zsh" || fromEnv === "bash"
+          ? (fromEnv as Shell)
+          : process.platform === "win32"
+            ? "powershell"
+            : "bash";
       if (opts.unset) {
         process.stdout.write(envCode(sh, null));
         return;

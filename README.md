@@ -379,6 +379,8 @@ eas build --platform ios  # any tool that reads EXPO_TOKEN uses that account
 eval "$(easw env --unset)"
 ```
 
+EASwitch picks the format from your `$SHELL` (so Git Bash on Windows gets sh syntax), otherwise PowerShell on Windows and sh elsewhere. Name the shell to choose:
+
 | Shell | Load it with |
 |---|---|
 | sh, bash, zsh | `eval "$(easw env)"` |
