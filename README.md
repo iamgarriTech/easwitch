@@ -204,7 +204,9 @@ The [docs site has the full walkthrough](https://iamgarritech.github.io/easwitch
 | [`easw link <name>`](#easw-link) | Link the current project to an account |
 | [`easw unlink`](#easw-unlink) | Remove the current project's link |
 | [`easw <eas command>`](#easw-eas-command) | Run any EAS CLI command as the selected account |
+| [`easw eas <args>`](#easw-eas) | Run eas the way the shell hook does: the linked account in linked projects, your normal login elsewhere |
 | [`easw exec <command>`](#easw-exec) | Run any other program as the selected account |
+| [`easw env`](#easw-env) | Print shell code that sets `EXPO_TOKEN` to the account easw would use, for `eval "$(easw env)"` |
 | [`easw hook` / `easw unhook`](#easw-hook--easw-unhook) | Turn the shell hook for plain `eas` on or off |
 | [`easw shell-init [shell]`](#easw-shell-init) | Show the hook code, to add it to your shell settings yourself |
 
@@ -265,7 +267,17 @@ If you run it inside a project linked to a different account, easw reminds you t
 easw current [--json]
 ```
 
-Shows the current account, and the linked account if you're inside a linked project. With `--json`, it also reports which account easw would actually use here, and why (see [Scripts and AI agents](#scripts-and-ai-agents)).
+Shows the current account, and the linked account if you're inside a linked project. It also warns you when plain `eas` won't follow the link:
+
+```text
+Current EASwitch account: personal
+This project is linked to: work (/Users/jane/code/acme-app/.easwitch.json)
+⚠ Plain `eas` here still uses your normal Expo login, not "work". Run `easw hook` so it follows the link, or use `easw` commands (`easw build`, `easw whoami`...).
+```
+
+If the hook is set up but the terminal was opened before that, it tells you to open a new terminal. When the hook is active, it confirms that plain `eas` uses the linked account.
+
+With `--json`, it also reports which account easw would actually use here, and why, and whether the shell hook is active (see [Scripts and AI agents](#scripts-and-ai-agents)).
 
 ### `easw remove`
 
@@ -317,6 +329,26 @@ easw build:list
 
 `easw login`, `easw logout`, `easw account:login` and `easw account:logout` are blocked, because they would change your normal Expo login. Use `eas login` for that. To add an account, use `easw add`.
 
+### `easw eas`
+
+```text
+easw eas [arguments...]
+```
+
+Runs EAS CLI exactly the way the [shell hook](#use-plain-eas-in-linked-projects) does. The hook is just a shell function that calls `easw eas`:
+
+- **Inside a linked project:** runs `eas` as the linked account.
+- **Everywhere else:** runs your normal `eas`, unchanged.
+- **`easw eas login` / `easw eas logout`:** always your normal session.
+
+Use it in scripts and CI when you want that behaviour without depending on anyone's shell setup:
+
+```bash
+easw eas build --platform ios --non-interactive
+```
+
+How it differs from the others: `easw build` always uses an EASwitch account (the linked one, or your current one) and fails if there isn't one, while `easw eas build` falls back to your normal login outside linked projects.
+
 ### `easw exec`
 
 ```text
@@ -332,6 +364,33 @@ easw exec -- node scripts/deploy.js --dry-run
 ```
 
 Everything after `exec` is passed to the program untouched; the `--` is optional.
+
+### `easw env`
+
+```text
+easw env [shell] [--unset]
+```
+
+Prints shell code that sets `EXPO_TOKEN` to the account easw would use here (the linked one, or your current one), so a script can adopt it in one line:
+
+```bash
+eval "$(easw env)"        # EXPO_TOKEN is now set in this shell
+eas build --platform ios  # any tool that reads EXPO_TOKEN uses that account
+eval "$(easw env --unset)"
+```
+
+EASwitch picks the format from your `$SHELL` (so Git Bash on Windows gets sh syntax), otherwise PowerShell on Windows and sh elsewhere. Name the shell to choose:
+
+| Shell | Load it with |
+|---|---|
+| sh, bash, zsh | `eval "$(easw env)"` |
+| fish | `easw env fish \| source` |
+| PowerShell | `easw env powershell \| Out-String \| Invoke-Expression` |
+| Command Prompt | `for /f "delims=" %i in ('easw env cmd') do %i` |
+
+- **Stays set:** unlike other easw commands, this leaves the token set in that shell until it exits, or you run the `--unset` code. Prefer `easw eas` or `easw exec` when you only need it for one command.
+- **Won't print to the screen:** `easw env` refuses to print the token straight into a terminal, so it doesn't end up visible or in your scrollback. `eval "$(…)"` still works, because the output goes to the shell.
+- **`--unset`** prints the code that clears `EXPO_TOKEN` again.
 
 ### `easw hook` / `easw unhook`
 
@@ -433,7 +492,7 @@ EAS CLI reads an `EXPO_TOKEN` environment variable and, when it's set, uses that
 2. reads that account's token from your system's credential store,
 3. runs the command with `EXPO_TOKEN` set **for that one process only**.
 
-Nothing is written to your shell, your Expo login (`~/.expo/state.json`), or your project's Expo config. When the command exits, its exit code is passed straight back, so `easw` works in scripts.
+Nothing is written to your shell, your Expo login (`~/.expo/state.json`), or your project's Expo config. The one exception is `easw env`, which you run on purpose to set `EXPO_TOKEN` in a shell. When the command exits, its exit code is passed straight back, so `easw` works in scripts.
 
 ## Where things are stored
 
@@ -453,12 +512,15 @@ On Linux, a Secret Service provider (such as GNOME Keyring or KWallet) must be r
 | `EASWITCH_CONFIG_DIR` | Use this folder for EASwitch's config instead of the default. Its tokens are kept in a separate part of the credential store, so it's safe for testing without touching your real accounts. |
 | `EXPO_TOKEN` | If it's already set in your shell, EASwitch overrides it for the commands it runs, and prints a warning. |
 | `NO_COLOR` | Turn off colored output. |
+| `EASWITCH_HOOK` | Set to `1` by the shell hook in terminals that have loaded it. `easw current` uses it to tell whether plain `eas` follows links. You don't set it yourself. |
 
 ## Scripts and AI agents
 
 EASwitch works without a terminal, so shell scripts and AI coding agents can use it too:
 
 ```bash
+easw eas build --platform ios   # like the shell hook: linked account in linked projects, normal login elsewhere
+eval "$(easw env)"    # set EXPO_TOKEN in this script to the account easw would use here
 easw current --json   # which account easw would use here, and why
 easw list --json      # all accounts, marking the current and linked ones
 easw list --check     # test every token with Expo; exits 1 if any are invalid
@@ -472,11 +534,15 @@ echo "$TOKEN" | easw add work   # add an account non-interactively
   "current": "personal",
   "project": { "account": "work", "file": "/Users/jane/code/acme-app/.easwitch.json" },
   "resolved": { "name": "work", "source": "project" },
-  "error": null
+  "error": null,
+  "hook": { "installed": true, "active": true },
+  "plainEasFollowsLink": true
 }
 ```
 
-`resolved.source` is `project` or `current`. When no account can be used, `resolved` is `null` and `error` says why.
+`resolved.source` is `project` or `current`. When no account can be used, `resolved` is `null` and `error` says why. `hook.active` says whether plain `eas` goes through EASwitch in this shell. `plainEasFollowsLink` is `null` outside linked projects.
+
+**In CI**, you usually don't need EASwitch: set `EXPO_TOKEN` as a secret and run `eas`. If your scripts already use EASwitch, `easw eas` is the supported entry point.
 
 **Exit codes:** commands run through easw return their own exit code. easw's own errors exit with 1, `easw list --check` exits with 1 if any token is invalid, and pressing Ctrl+C at a prompt exits with 130.
 

@@ -14,8 +14,11 @@ import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
 import {
   SHELLS,
+  HOOK_ENV,
   defaultHookShells,
   detectShell,
+  envCode,
+  envUsage,
   installCmdHook,
   installHook,
   isHookInstalled,
@@ -87,6 +90,12 @@ async function promptForToken(): Promise<string> {
     token = (await ask()).trim();
   }
   return token;
+}
+
+/** Whether plain `eas` goes through EASwitch in this terminal (active) or will in new ones (installed). */
+function hookStatus(): { installed: boolean; active: boolean } {
+  const active = process.env[HOOK_ENV] === "1";
+  return { active, installed: active || isHookInstalled() };
 }
 
 interface TokenCheck {
@@ -288,13 +297,36 @@ function buildProgram(): Command {
           if (!(err instanceof EaswError)) throw err;
           error = err.message;
         }
-        printJson({ current: cfg.current, project: link, resolved, error });
+        const hook = hookStatus();
+        printJson({
+          current: cfg.current,
+          project: link,
+          resolved,
+          error,
+          hook,
+          plainEasFollowsLink: link ? hook.active : null,
+        });
         return;
       }
       console.log(`Current EASwitch account: ${cfg.current ?? pc.dim("(none)")}`);
       const link = findProjectLink(process.cwd());
-      if (link) {
-        console.log(`This project is linked to: ${pc.cyan(link.account)} ${pc.dim(`(${link.file})`)}`);
+      if (!link) return;
+      console.log(`This project is linked to: ${pc.cyan(link.account)} ${pc.dim(`(${link.file})`)}`);
+      const hook = hookStatus();
+      if (hook.active) {
+        console.log(pc.dim("Plain `eas` here uses it too (the shell hook is active)."));
+      } else if (hook.installed) {
+        console.log(
+          pc.yellow(
+            `⚠ Plain \`eas\` here still uses your normal Expo login, not "${link.account}": the shell hook is set up, but this terminal hasn't loaded it. Open a new terminal.`,
+          ),
+        );
+      } else {
+        console.log(
+          pc.yellow(
+            `⚠ Plain \`eas\` here still uses your normal Expo login, not "${link.account}". Run \`easw hook\` so it follows the link, or use \`easw\` commands (\`easw build\`, \`easw whoami\`...).`,
+          ),
+        );
       }
     });
 
@@ -335,8 +367,13 @@ function buildProgram(): Command {
         console.log(pc.dim(`  Added ${PROJECT_FILE} to .gitignore, since account names are personal.`));
       }
       console.log(pc.dim(`  \`easw\` commands here now use "${name}" (easw whoami, easw build, easw update...).`));
-      if (isHookInstalled()) {
-        console.log(pc.dim("  Plain `eas` commands here use it too (the hook is set up)."));
+      const hook = hookStatus();
+      if (hook.active) {
+        console.log(pc.dim("  Plain `eas` commands here use it too (the shell hook is active)."));
+        return;
+      }
+      if (hook.installed) {
+        console.log(pc.dim("  Plain `eas` commands will use it too once this terminal loads the hook. Open a new terminal."));
         return;
       }
       if (!opts.hookPrompt || !process.stdin.isTTY) {
@@ -391,6 +428,44 @@ function buildProgram(): Command {
   };
 
   program
+    .command("env")
+    .description('print shell code that sets EXPO_TOKEN to the account easw would use here, for `eval "$(easw env)"`')
+    .argument("[shell]", `${SHELLS.join(", ")} (default: from $SHELL, else PowerShell on Windows and sh elsewhere)`)
+    .option("--unset", "print code that clears EXPO_TOKEN instead")
+    .addHelpText(
+      "after",
+      `\nThe token stays set in that shell until it exits or you run the --unset code. Load it with:\n  sh/bash/zsh:  ${envUsage("bash")}\n  fish:         ${envUsage("fish")}\n  PowerShell:   ${envUsage("powershell")}\n  cmd:          ${envUsage("cmd")}`,
+    )
+    .action(async (shell: string | undefined, opts: { unset?: boolean }) => {
+      // $SHELL first, so Git Bash on Windows gets sh syntax; otherwise PowerShell on Windows.
+      const fromEnv = path.basename(process.env.SHELL ?? "").replace(/\.exe$/, "");
+      const sh: Shell = shell
+        ? parseShell(shell)
+        : fromEnv === "fish" || fromEnv === "zsh" || fromEnv === "bash"
+          ? (fromEnv as Shell)
+          : process.platform === "win32"
+            ? "powershell"
+            : "bash";
+      if (opts.unset) {
+        process.stdout.write(envCode(sh, null));
+        return;
+      }
+      // Printing a real token to the screen would leave it in the scrollback; eval/source read it from a pipe.
+      if (process.stdout.isTTY) {
+        throw new EaswError("`easw env` prints your access token, so it doesn't print it to the terminal", `Load it into your shell instead: ${envUsage(sh)}`);
+      }
+      const cwd = process.cwd();
+      const account = resolveAccount(loadConfig(), cwd);
+      const token = await getToken(account.name);
+      if (!token) {
+        throw new EaswError(`No token stored for "${account.name}"`, `Re-add it with \`easw add ${account.name} --force\`.`);
+      }
+      const via = account.source === "project" ? `linked in ${path.relative(cwd, account.linkFile!) || account.linkFile}` : "current";
+      process.stderr.write(pc.dim(`› easw: EXPO_TOKEN set to account "${account.name}" (${via})\n`));
+      process.stdout.write(envCode(sh, token));
+    });
+
+  program
     .command("hook")
     .description("make plain `eas` use the linked account inside linked projects (sets it up for you)")
     .argument("[shell]", `${SHELLS.join(", ")} (default: your shell; on Windows, PowerShell and cmd)`)
@@ -428,7 +503,11 @@ function buildProgram(): Command {
       process.stdout.write(shellInit(parseShell(shell)));
     });
 
-  // Registered for --help only; main() routes exec before commander parses.
+  // Registered for --help only; main() routes eas and exec before commander parses.
+  program
+    .command("eas")
+    .argument("[args...]")
+    .description("run eas the way the shell hook does: the linked account in linked projects, your normal login elsewhere");
   program.command("exec").argument("<command...>").description("run any other program as the selected account");
   program.addHelpText(
     "after",

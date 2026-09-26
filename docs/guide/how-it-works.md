@@ -6,7 +6,7 @@ EAS CLI reads an `EXPO_TOKEN` environment variable and, when it's set, uses that
 2. reads that account's token from your system's credential store,
 3. runs the command with `EXPO_TOKEN` set **for that one process only**.
 
-Nothing is written to your shell, your Expo login (`~/.expo/state.json`), or your project's Expo config. When the command exits, its exit code is passed straight back, so `easw` works in scripts.
+Nothing is written to your shell, your Expo login (`~/.expo/state.json`), or your project's Expo config. The one exception is [`easw env`](/reference/commands#easw-env), which you run on purpose to set `EXPO_TOKEN` in a shell. When the command exits, its exit code is passed straight back, so `easw` works in scripts.
 
 ## Your normal login
 

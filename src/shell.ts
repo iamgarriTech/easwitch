@@ -5,7 +5,7 @@ import path from "node:path";
 import { configDir } from "./config.js";
 import { EaswError } from "./errors.js";
 import { findProjectLink } from "./project.js";
-import { SHELL_EAS, isLoginCommand } from "./route.js";
+import { isLoginCommand } from "./route.js";
 import { runEasPlain, runWithAccount } from "./run.js";
 
 export const SHELLS = ["zsh", "bash", "fish", "powershell", "cmd"] as const;
@@ -25,19 +25,56 @@ export function detectShell(): Shell {
   throw new EaswError("Couldn't detect your shell", `Pass one of: ${SHELLS.join(", ")}. For example: easw shell-init zsh`);
 }
 
-/** Shell code that wraps `eas` so it goes through `easw __shell-eas`. */
+/** Set by the hook in shells that have loaded it, so `easw current` can tell. */
+export const HOOK_ENV = "EASWITCH_HOOK";
+
+/** Shell code that wraps `eas` so it goes through `easw eas`. */
 export function shellInit(shell: Shell): string {
   switch (shell) {
     case "zsh":
     case "bash":
-      return `# ${COMMENT}\neas() { command easw ${SHELL_EAS} "$@"; }\n`;
+      return `# ${COMMENT}\nexport ${HOOK_ENV}=1\neas() { command easw eas "$@"; }\n`;
     case "fish":
-      return `# ${COMMENT}\nfunction eas --description 'eas, as the linked EASwitch account in linked projects'\n    command easw ${SHELL_EAS} $argv\nend\n`;
+      return `# ${COMMENT}\nset -gx ${HOOK_ENV} 1\nfunction eas --description 'eas, as the linked EASwitch account in linked projects'\n    command easw eas $argv\nend\n`;
     case "powershell":
-      return `# ${COMMENT}\nfunction eas { easw ${SHELL_EAS} @args }\n`;
+      return `# ${COMMENT}\n$env:${HOOK_ENV} = "1"\nfunction eas { easw eas @args }\n`;
     case "cmd":
       // cmd has no functions; a doskey macro is its equivalent for interactive sessions.
-      return `@rem ${COMMENT}\n@doskey eas=easw ${SHELL_EAS} $*\n`;
+      return `@rem ${COMMENT}\n@set ${HOOK_ENV}=1\n@doskey eas=easw eas $*\n`;
+  }
+}
+
+/** Shell code that sets (or, with a null token, clears) EXPO_TOKEN, for `easw env`. */
+export function envCode(shell: Shell, token: string | null): string {
+  switch (shell) {
+    case "zsh":
+    case "bash":
+      return token === null ? "unset EXPO_TOKEN\n" : `export EXPO_TOKEN='${token.replaceAll("'", "'\\''")}'\n`;
+    case "fish":
+      return token === null
+        ? "set -e EXPO_TOKEN\n"
+        : `set -gx EXPO_TOKEN '${token.replaceAll("\\", "\\\\").replaceAll("'", "\\'")}'\n`;
+    case "powershell":
+      return token === null
+        ? "Remove-Item Env:EXPO_TOKEN -ErrorAction SilentlyContinue\n"
+        : `$env:EXPO_TOKEN = '${token.replaceAll("'", "''")}'\n`;
+    case "cmd":
+      return token === null ? "set EXPO_TOKEN=\n" : `set "EXPO_TOKEN=${token}"\n`;
+  }
+}
+
+/** How to load `easw env` output in each shell. */
+export function envUsage(shell: Shell): string {
+  switch (shell) {
+    case "zsh":
+    case "bash":
+      return 'eval "$(easw env)"';
+    case "fish":
+      return "easw env fish | source";
+    case "powershell":
+      return "easw env powershell | Out-String | Invoke-Expression";
+    case "cmd":
+      return "for /f \"delims=\" %i in ('easw env cmd') do %i";
   }
 }
 
@@ -65,7 +102,7 @@ function hookLine(shell: Shell): string {
     case "powershell":
       return "easw shell-init powershell | Out-String | Invoke-Expression";
     case "cmd":
-      return `doskey eas=easw ${SHELL_EAS} $*`;
+      return "doskey eas=easw eas $*";
   }
 }
 
@@ -147,7 +184,7 @@ export function installCmdHook(): boolean {
   const file = rcFile("cmd");
   const call = `"${file}"`;
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, `@rem ${HOOK_MARKER}\r\n@${hookLine("cmd")}\r\n`);
+  fs.writeFileSync(file, `@rem ${HOOK_MARKER}\r\n@set ${HOOK_ENV}=1\r\n@${hookLine("cmd")}\r\n`);
   const current = readAutoRun();
   if (current.includes(call)) return false;
   writeAutoRun(current ? `${current} & ${call}` : call);

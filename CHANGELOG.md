@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `easw eas <args>`: run EAS CLI the way the shell hook does (the linked account inside linked projects, your normal login elsewhere), as a documented command for scripts and CI. The hook now calls it; hooks installed earlier keep working.
+- `easw env`: prints shell code that sets `EXPO_TOKEN` to the account easw would use here, for `eval "$(easw env)"` (plus fish, PowerShell and cmd variants, and `--unset`). It won't print the token straight into a terminal.
+- `easw current` warns when plain `eas` won't follow the project's link: when the hook isn't set up, or it's set up but the terminal hasn't loaded it. `easw current --json` adds `hook` and `plainEasFollowsLink`.
+
+### Changed
+
+- The shell hook sets `EASWITCH_HOOK=1` in terminals that load it. On Command Prompt, run `easw hook` again to update the hook file.
+
 ## [0.8.1] - 2026-09-26
 
 ### Fixed
