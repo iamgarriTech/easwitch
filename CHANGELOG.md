@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-09-26
+
 ### Added
 
 - `easw add` can log in to Expo (browser, email and password, or SSO) instead of asking you to paste a token. The login runs in a temporary, separate session, so your normal Expo login isn't affected. EASwitch uses it to create an access token, then logs the temporary session out. `--login [browser|password|sso]` skips the menu; pasting a token still works.
@@ -50,7 +52,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`.
 - `build`, `update`, `submit` and `whoami` run as the resolved account.
 
-[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/iamgarriTech/easwitch/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/iamgarriTech/easwitch/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/iamgarriTech/easwitch/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/iamgarriTech/easwitch/compare/v0.1.0...v0.2.0
