@@ -103,7 +103,8 @@ export function rcFile(shell: Shell): string {
 /** Add the hook to `file`. Returns false when it was already there. */
 export function installHook(shell: Shell, file: string): boolean {
   const contents = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
-  if (contents.includes(HOOK_MARKER)) return false;
+  // Also counts a hook the user added by hand from `easw shell-init`.
+  if (contents.includes(HOOK_MARKER) || contents.includes("easw shell-init")) return false;
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const sep = contents === "" ? "" : contents.endsWith("\n") ? "\n" : "\n\n";
   fs.appendFileSync(file, `${sep}${HOOK_MARKER}\n${hookLine(shell)}\n`);

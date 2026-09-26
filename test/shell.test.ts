@@ -37,6 +37,13 @@ describe("installHook / uninstallHook", () => {
     expect(fs.readFileSync(file, "utf8")).toBe("");
   });
 
+  it("doesn't add a second hook when one was added by hand", () => {
+    const file = path.join(tmp, ".zshrc");
+    fs.writeFileSync(file, 'eval "$(easw shell-init)"\n');
+    expect(installHook("zsh", file)).toBe(false);
+    expect(fs.readFileSync(file, "utf8")).toBe('eval "$(easw shell-init)"\n');
+  });
+
   it("reports nothing to remove when the file doesn't exist", () => {
     expect(uninstallHook(path.join(tmp, "missing"))).toBe(false);
   });
