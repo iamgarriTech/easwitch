@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `easw hook` turns on the shell hook with one command. It detects your shell and adds a marked line to its config file; `easw unhook` removes it. `easw shell-init` still prints the script for manual setup.
+
 ## [0.6.0] - 2026-09-26
 
 ### Added

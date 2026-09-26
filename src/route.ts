@@ -2,7 +2,7 @@ import { EaswError } from "./errors.js";
 
 /** Subcommands easw handles itself (keep in sync with buildProgram). Anything else goes to eas. */
 export const EASW_COMMANDS = [
-  "add", "list", "ls", "use", "current", "remove", "rm", "link", "unlink", "shell-init", "help",
+  "add", "list", "ls", "use", "current", "remove", "rm", "link", "unlink", "shell-init", "hook", "unhook", "help",
 ];
 
 /** eas commands that write the normal Expo session, which EASwitch must never touch. */

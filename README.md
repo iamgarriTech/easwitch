@@ -90,7 +90,8 @@ easw build           # always runs as "client-acme" inside this project
 | `easw remove <name>` | Delete an account and its stored token. |
 | `easw link <name>` | Link the current project to an account. |
 | `easw unlink` | Remove the current project's link. |
-| `easw shell-init [shell]` | Print a shell hook so plain `eas` uses the linked account in linked projects. See [below](#use-plain-eas-in-linked-projects-optional). |
+| `easw hook` / `easw unhook` | Turn the shell hook on or off, so plain `eas` uses the linked account in linked projects. See [below](#use-plain-eas-in-linked-projects-optional). |
+| `easw shell-init [shell]` | Print the hook script, to add to your shell config yourself. |
 | `easw exec <command...>` | Run any command with the selected account, e.g. `easw exec npx expo-doctor`. |
 | `easw <eas command>` | Any other command is passed to EAS CLI as the selected account: `easw build`, `easw submit`, `easw env:list`, `easw credentials`, `easw build:list`… |
 
@@ -112,13 +113,13 @@ easw add work --force           # replace the token of an existing account
 
 ## Use plain `eas` in linked projects (optional)
 
-By default, plain `eas` always uses your normal Expo login. If you'd rather type `eas` everywhere, add EASwitch's shell hook. Inside projects you've linked with `easw link`, plain `eas` then runs as the linked account. Everywhere else, it's your normal `eas`.
+By default, plain `eas` always uses your normal Expo login. If you'd rather type `eas` everywhere, turn on EASwitch's shell hook:
 
-| Shell | Add to your shell config |
-|---|---|
-| zsh (`~/.zshrc`) or bash (`~/.bashrc`) | `eval "$(easw shell-init)"` |
-| fish (`~/.config/fish/config.fish`) | `easw shell-init fish \| source` |
-| PowerShell (`$PROFILE`) | `easw shell-init powershell \| Out-String \| Invoke-Expression` |
+```bash
+easw hook
+```
+
+Then open a new terminal. Inside projects you've linked with `easw link`, plain `eas` runs as the linked account. Everywhere else, it's your normal `eas`.
 
 ```text
 $ cd ~/code/acme-app       # linked to client-acme
@@ -133,7 +134,9 @@ jane
 - `eas login` and `eas logout` always go to your normal session.
 - If you don't have EAS CLI installed globally, plain `eas` uses the copy bundled with EASwitch.
 
-To undo it, remove the line from your shell config.
+To turn it off, run `easw unhook`.
+
+`easw hook` works with zsh, bash, fish and PowerShell, and detects your shell automatically (or pass one, e.g. `easw hook fish`). It adds a marked line to your shell config (`~/.zshrc`, `~/.bash_profile` on macOS or `~/.bashrc` on Linux, fish's `config.fish`, or your PowerShell profile). To add the hook yourself instead, put the output of `easw shell-init` in your config: for example `eval "$(easw shell-init)"` in `~/.zshrc`.
 
 ## Which account is used?
 

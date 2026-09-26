@@ -47,6 +47,11 @@ jobs:
           $out = eas --version
           if ($LASTEXITCODE -ne 0 -or "$out" -notmatch "eas-cli/") { throw "hook failed: $out" }
           Write-Output "hooked eas: $out"
+          easw hook powershell
+          $profilePath = $PROFILE.CurrentUserCurrentHost
+          if (-not (Select-String -Path $profilePath -Pattern "easw shell-init powershell" -Quiet)) { throw "easw hook didn't update $profilePath" }
+          easw unhook powershell
+          if (Select-String -Path $profilePath -Pattern "easw shell-init powershell" -Quiet) { throw "easw unhook didn't clean $profilePath" }
 
       - name: Shell hook (fish, bash)
         if: runner.os == 'Linux'

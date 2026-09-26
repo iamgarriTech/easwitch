@@ -12,7 +12,7 @@ import { LOGIN_METHODS, loginForToken, type LoginMethod } from "./login.js";
 import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
 import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
-import { SHELLS, detectShell, runShellEas, shellInit, type Shell } from "./shell.js";
+import { SHELLS, detectShell, installHook, rcFile, runShellEas, shellInit, uninstallHook, type Shell } from "./shell.js";
 import { TOKEN_URL, runWithAccount, whoamiForToken } from "./run.js";
 import { deleteToken, getToken, setToken } from "./tokens.js";
 
@@ -335,19 +335,54 @@ function buildProgram(): Command {
       ok("Project account removed");
     });
 
+  const parseShell = (shell: string | undefined): Shell => {
+    if (shell && !(SHELLS as readonly string[]).includes(shell)) {
+      throw new EaswError(`Unsupported shell "${shell}"`, `Use one of: ${SHELLS.join(", ")}.`);
+    }
+    return (shell as Shell | undefined) ?? detectShell();
+  };
+  const tilde = (file: string) => (file.startsWith(os.homedir()) ? `~${file.slice(os.homedir().length)}` : file);
+
+  program
+    .command("hook")
+    .description("make plain `eas` use the linked account inside linked projects (adds a line to your shell config)")
+    .argument("[shell]", SHELLS.join(", "))
+    .action((shell: string | undefined) => {
+      const sh = parseShell(shell);
+      const file = rcFile(sh);
+      if (!installHook(sh, file)) {
+        console.log(`The EASwitch hook is already in ${tilde(file)}.`);
+        return;
+      }
+      ok(`Added the EASwitch hook to ${tilde(file)}`);
+      console.log(pc.dim("  Open a new terminal for it to take effect."));
+      console.log(pc.dim("  Inside linked projects, plain `eas` now uses the linked account. Undo with `easw unhook`."));
+    });
+
+  program
+    .command("unhook")
+    .description("remove the hook added by `easw hook`")
+    .argument("[shell]", SHELLS.join(", "))
+    .action((shell: string | undefined) => {
+      const file = rcFile(parseShell(shell));
+      if (!uninstallHook(file)) {
+        console.log(`No EASwitch hook found in ${tilde(file)}.`);
+        return;
+      }
+      ok(`Removed the EASwitch hook from ${tilde(file)}`);
+      console.log(pc.dim("  Open a new terminal for it to take effect."));
+    });
+
   program
     .command("shell-init")
-    .description("print a shell hook so plain `eas` uses the linked account in linked projects")
+    .description("print the hook script, to add to your shell config yourself (or use `easw hook`)")
     .argument("[shell]", SHELLS.join(", "))
     .addHelpText(
       "after",
       '\nAdd to your shell config:\n  zsh/bash:    eval "$(easw shell-init)"\n  fish:        easw shell-init fish | source\n  PowerShell:  easw shell-init powershell | Out-String | Invoke-Expression',
     )
     .action((shell: string | undefined) => {
-      if (shell && !(SHELLS as readonly string[]).includes(shell)) {
-        throw new EaswError(`Unsupported shell "${shell}"`, `Use one of: ${SHELLS.join(", ")}.`);
-      }
-      process.stdout.write(shellInit((shell as Shell | undefined) ?? detectShell()));
+      process.stdout.write(shellInit(parseShell(shell)));
     });
 
   // Registered for --help only; main() routes exec before commander parses.
