@@ -27,6 +27,7 @@ npm run build        # bundle to dist/
 npm link             # put `easw` / `easwitch` on your PATH
 npm test
 npm run typecheck
+npm run smoke        # end-to-end check against your real credential store (cleans up after itself)
 ```
 
 Set `EASWITCH_CONFIG_DIR` to use a throwaway config directory while testing.
