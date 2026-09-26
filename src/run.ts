@@ -39,12 +39,27 @@ export async function runWithAccount(command: string, args: string[], cwd = proc
     process.stderr.write(pc.yellow(`› easw: overriding EXPO_TOKEN from your shell for this command\n`));
   }
 
+  return spawnInherit(eas ? eas.command : command, eas ? [...eas.prefix, ...args] : args, {
+    cwd,
+    env: { ...process.env, EXPO_TOKEN: token },
+    name: command,
+  });
+}
+
+/** Run eas with the environment as-is (the user's normal login), preferring a global eas. */
+export function runEasPlain(args: string[], cwd = process.cwd()): Promise<number> {
+  const eas = resolveEas();
+  return spawnInherit(eas.command, [...eas.prefix, ...args], { cwd, env: process.env, name: "eas" });
+}
+
+/** Spawn sharing our terminal; resolves with the child's exit code. */
+function spawnInherit(
+  command: string,
+  args: string[],
+  opts: { cwd: string; env: NodeJS.ProcessEnv; name: string },
+): Promise<number> {
   return new Promise((resolve, reject) => {
-    const child = spawn(eas ? eas.command : command, eas ? [...eas.prefix, ...args] : args, {
-      cwd,
-      stdio: "inherit",
-      env: { ...process.env, EXPO_TOKEN: token },
-    });
+    const child = spawn(command, args, { cwd: opts.cwd, stdio: "inherit", env: opts.env });
 
     // The child shares our terminal and receives Ctrl+C itself; don't die before it does.
     const ignore = () => {};
@@ -57,7 +72,7 @@ export async function runWithAccount(command: string, args: string[], cwd = proc
 
     child.on("error", (err: NodeJS.ErrnoException) => {
       cleanup();
-      reject(err.code === "ENOENT" ? notFound(command) : err);
+      reject(err.code === "ENOENT" ? notFound(opts.name) : err);
     });
     child.on("close", (code, signal) => {
       cleanup();

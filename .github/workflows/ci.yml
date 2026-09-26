@@ -36,3 +36,22 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq gnome-keyring dbus-x11 >/dev/null
           dbus-run-session -- sh -c 'echo -n ci | gnome-keyring-daemon --unlock --components=secrets >/dev/null && npm run smoke'
+
+      # Plain `eas` through the shell-init hook, outside a linked project, runs the normal (bundled) eas.
+      - name: Shell hook (PowerShell)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          npm link
+          easw shell-init powershell | Out-String | Invoke-Expression
+          $out = eas --version
+          if ($LASTEXITCODE -ne 0 -or "$out" -notmatch "eas-cli/") { throw "hook failed: $out" }
+          Write-Output "hooked eas: $out"
+
+      - name: Shell hook (fish, bash)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y -qq fish >/dev/null
+          npm link
+          fish -c 'easw shell-init fish | source; and eas --version' | grep 'eas-cli/'
+          bash -c 'eval "$(easw shell-init bash)"; eas --version' | grep 'eas-cli/'

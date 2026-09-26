@@ -58,6 +58,16 @@ try {
   assert.equal(ok(printToken), "token-a", "outside the project, current account applies");
 
   assert.equal(easw(["use"]).status, 1, "use without a name needs a terminal for the picker");
+  // Shell hook: plain `eas` uses the linked account only inside the linked project.
+  assert.match(ok(["shell-init", "bash"]), /eas\(\) \{ command easw __shell-eas "\$@"; \}/);
+  const hooked = easw(["__shell-eas", "--version"], { cwd: nested });
+  assert.equal(hooked.status, 0);
+  assert.match(hooked.stderr, new RegExp(`using account "${b}"`));
+  const plain = easw(["__shell-eas", "--version"]);
+  assert.equal(plain.status, 0);
+  assert.doesNotMatch(plain.stderr, /using account/);
+  assert.match(plain.stdout, /eas-cli\//);
+
   ok(["use", b]);
   assert.match(ok(["current"]), new RegExp(`Current EASwitch account: ${b}`));
   ok(["unlink"], { cwd: nested });

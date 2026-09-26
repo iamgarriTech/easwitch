@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `easw shell-init`: an opt-in shell hook (zsh, bash, fish, PowerShell) so plain `eas` runs as the linked account inside projects linked with `easw link`, and as your normal login everywhere else. `eas login`/`eas logout` always use your normal session.
+
 ## [0.5.1] - 2026-09-26
 
 ### Changed

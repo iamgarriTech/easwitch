@@ -3,7 +3,7 @@ import { route } from "../src/route.js";
 
 describe("route", () => {
   it("keeps easw's own commands and flags", () => {
-    for (const argv of [[], ["--help"], ["-V"], ["add", "work"], ["ls"], ["help", "link"]]) {
+    for (const argv of [[], ["--help"], ["-V"], ["add", "work"], ["ls"], ["help", "link"], ["shell-init", "zsh"]]) {
       expect(route(argv)).toEqual({ kind: "easw" });
     }
   });
@@ -27,5 +27,14 @@ describe("route", () => {
     for (const sub of ["login", "logout", "account:login", "account:logout"]) {
       expect(() => route([sub])).toThrow(/normal Expo login/);
     }
+  });
+
+  it("routes the shell hook's plain eas calls", () => {
+    expect(route(["__shell-eas", "build", "--platform", "ios"])).toEqual({
+      kind: "shell-eas",
+      args: ["build", "--platform", "ios"],
+    });
+    // Login is decided later, by the hook runner, so it isn't blocked here.
+    expect(route(["__shell-eas", "login"])).toEqual({ kind: "shell-eas", args: ["login"] });
   });
 });
