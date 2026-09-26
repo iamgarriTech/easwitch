@@ -26,6 +26,7 @@ cd ~/code/acme-app
 easw link work                # this project always uses "work"
 
 easw hook                     # optional: make plain `eas` use the linked account too
+easw shell-init               # optional: only show the hook code, to add it yourself
 ```
 
 ## Contents
@@ -129,7 +130,7 @@ Open a new terminal. Now plain `eas` also uses the linked account inside linked 
 | [`easw <eas command>`](#easw-eas-command) | Run any EAS CLI command as the selected account |
 | [`easw exec <command>`](#easw-exec) | Run any other program as the selected account |
 | [`easw hook` / `easw unhook`](#easw-hook--easw-unhook) | Turn the shell hook for plain `eas` on or off |
-| [`easw shell-init [shell]`](#easw-shell-init) | Print the shell hook script |
+| [`easw shell-init [shell]`](#easw-shell-init) | Show the hook code, to add it to your shell settings yourself |
 
 Every command has built-in help: `easw --help`, or `easw <command> --help`. `easw --version` prints the version.
 
@@ -269,7 +270,7 @@ easw unhook [shell]
 easw shell-init [shell]
 ```
 
-Prints the shell code behind the hook, without changing anything, for people who prefer to edit their shell config themselves. See [Setting it up yourself](#setting-it-up-yourself).
+Only shows the hook code, without changing anything, so you can add it to your shell settings yourself. `easw hook` does the same thing for you. See [Setting it up yourself](#setting-it-up-yourself).
 
 ## Use plain `eas` in linked projects
 
@@ -297,12 +298,14 @@ jane
 
 To turn it off, run `easw unhook` and open a new terminal.
 
-### `easw hook` and `easw shell-init`: what's the difference?
+### `easw hook` or `easw shell-init`?
 
-- **`easw shell-init`** only *prints* the small piece of shell code that sends plain `eas` through EASwitch. It doesn't change anything.
-- **`easw hook`** *installs* it for you: it adds one line to your shell's startup file so the code loads in every new terminal. `easw unhook` removes that line.
+Both turn on the same thing. The difference is who sets it up:
 
-Most people only need `easw hook`.
+- **`easw hook` sets it up for you.** Run it once, open a new terminal, and you're done.
+- **`easw shell-init` only shows you the code.** You copy it into your shell settings yourself.
+
+If you're not sure, use `easw hook`.
 
 ### Supported shells
 

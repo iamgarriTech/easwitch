@@ -359,7 +359,7 @@ function buildProgram(): Command {
 
   program
     .command("hook")
-    .description("make plain `eas` use the linked account inside linked projects (adds a line to your shell config)")
+    .description("make plain `eas` use the linked account inside linked projects (sets it up for you)")
     .argument("[shell]", `${SHELLS.join(", ")} (default: your shell; on Windows, PowerShell and cmd)`)
     .action((shell: string | undefined) => {
       const shells = shell ? [parseShell(shell)] : defaultHookShells();
@@ -398,7 +398,7 @@ function buildProgram(): Command {
 
   program
     .command("shell-init")
-    .description("print the hook script, to add to your shell config yourself (or use `easw hook`)")
+    .description("only show the hook code, to add it to your shell settings yourself (`easw hook` does it for you)")
     .argument("[shell]", SHELLS.join(", "))
     .addHelpText(
       "after",
@@ -421,6 +421,7 @@ Quick start:
   easw build --platform ios     run any EAS command as that account
   easw link work                make the current project always use "work"
   easw hook                     optional: make plain \`eas\` use the linked account too
+  easw shell-init               optional: only show the hook code, to add it yourself
 
 Docs: https://github.com/iamgarriTech/easwitch#readme`,
   );
