@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-26
+
 ### Added
 
 - `easw list --json` and `easw current --json` for scripts and AI agents. `current --json` also reports which account easw would use in the current directory, and why.
@@ -40,7 +42,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`.
 - `build`, `update`, `submit` and `whoami` run as the resolved account.
 
-[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/iamgarriTech/easwitch/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/iamgarriTech/easwitch/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/iamgarriTech/easwitch/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/iamgarriTech/easwitch/releases/tag/v0.1.0
