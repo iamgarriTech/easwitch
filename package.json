@@ -44,10 +44,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iamgarriTech/eas-switcher.git"
+    "url": "git+https://github.com/iamgarriTech/easwitch.git"
   },
-  "homepage": "https://github.com/iamgarriTech/eas-switcher#readme",
+  "homepage": "https://github.com/iamgarriTech/easwitch#readme",
   "bugs": {
-    "url": "https://github.com/iamgarriTech/eas-switcher/issues"
+    "url": "https://github.com/iamgarriTech/easwitch/issues"
   }
 }
