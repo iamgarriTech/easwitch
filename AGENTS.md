@@ -26,13 +26,13 @@ Set `EASWITCH_CONFIG_DIR` to a temp directory when running the CLI by hand so yo
 
 | Path | Responsibility |
 |---|---|
-| `src/cli.ts` | Commander program: `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`; entry point and error printing |
+| `src/cli.ts` | Commander program: `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `env`, `hook`, `unhook`, `shell-init`; entry point and error printing |
 | `src/route.ts` | Decides whether argv is an easw command, `exec`, a blocked command (`login`/`logout`), or forwarded to `eas` |
 | `src/resolve.ts` | Account resolution: nearest `.easwitch.json` link, then the current account |
 | `src/run.ts` | Spawns the child with `EXPO_TOKEN`; passes the exit code through; `whoamiForToken` validates tokens |
 | `src/eas.ts` | Finds EAS CLI: global `eas` on `PATH` first, otherwise the bundled `eas-cli` dependency run with `process.execPath` |
 | `src/login.ts` | `easw add --login`: runs the bundled `eas login` with `HOME`/`USERPROFILE` set to a temp dir, uses that temporary session to create an access token via Expo's GraphQL API, then logs it out and deletes the dir |
-| `src/shell.ts` | Shell hook: `easw hook`/`unhook` (edit the shell's config file between a marker comment), `easw shell-init` scripts (zsh/bash/fish/PowerShell/cmd; cmd uses a doskey macro loaded via the AutoRun registry value), and `runShellEas`, which the hook calls through the hidden `__shell-eas` subcommand |
+| `src/shell.ts` | Shell hook: `easw hook`/`unhook` (edit the shell's config file between a marker comment), `easw shell-init` scripts (zsh/bash/fish/PowerShell/cmd; cmd uses a doskey macro loaded via the AutoRun registry value), `easw env` code per shell, and `runShellEas`, behind `easw eas` |
 | `src/tokens.ts` | OS credential store via `@napi-rs/keyring` (service `easwitch`, account = profile name; a custom `EASWITCH_CONFIG_DIR` gets its own `easwitch:<hash>` service so tests never touch real tokens) |
 | `src/config.ts` | Global `config.json` (`{ accounts, current }`, no tokens) in the OS config dir |
 | `src/project.ts` | `.easwitch.json` lookup (walks up like `.git`), project root detection, `.gitignore` update |
@@ -45,8 +45,8 @@ Set `EASWITCH_CONFIG_DIR` to a temp directory when running the CLI by hand so yo
 These describe how the tool behaves today. Changing any of them is possible, but it's a behaviour change: call it out in the PR description and README.
 
 - Tokens are stored only in the OS credential store, never in config files, output or logs.
-- `EXPO_TOKEN` is set only in the spawned child's environment.
-- Plain `eas` uses the normal login unless the user installs the opt-in hook (`easw hook`, which `easw link` offers when it's missing). With it, plain `eas` uses the linked account only inside linked projects, and `login`/`logout` still go to the normal session.
+- `EXPO_TOKEN` is set only in the spawned child's environment. The one deliberate exception is `easw env`, which prints shell code for the user to `eval`, and refuses to print the token to a TTY.
+- Plain `eas` uses the normal login unless the user installs the opt-in hook (`easw hook`, which `easw link` offers when it's missing). The hook calls `easw eas` (the documented command; `__shell-eas` is a hidden alias for hooks installed before 0.9) and sets `EASWITCH_HOOK=1`, which `easw current` uses to warn when plain `eas` won't follow a link. With it, plain `eas` uses the linked account only inside linked projects, and `login`/`logout` still go to the normal session.
 - `easw add --login` never touches the real `~/.expo`: the temporary session lives in a throwaway home directory and is logged out and deleted afterwards. Only the resulting access token is kept, in the credential store.
 - `easw login`, `logout`, `account:login` and `account:logout` are blocked because they would write the normal Expo session.
 - If a project links to an account that doesn't exist, commands fail rather than falling back to the current account.
@@ -64,7 +64,8 @@ These describe how the tool behaves today. Changing any of them is possible, but
 
 If you're operating the CLI rather than editing it:
 
-- `easw current --json` shows which account easw would use in the current directory and why (`resolved.source` is `project` or `current`).
+- `easw current --json` shows which account easw would use in the current directory and why (`resolved.source` is `project` or `current`), plus `hook` and `plainEasFollowsLink`.
+- `easw eas <args>` runs eas like the shell hook (linked account in linked projects, normal login elsewhere); `eval "$(easw env)"` sets `EXPO_TOKEN` in a script.
 - `easw list --json` lists accounts, marking the current and linked ones. Add `--check` to test each token with Expo (adds `valid`/`error`; exits 1 if any are invalid).
 - `easw add <name>` needs a token: pass `--token` or pipe it on stdin. Without a terminal and no token, it fails instead of prompting.
 - Exit codes of wrapped commands are passed through unchanged.

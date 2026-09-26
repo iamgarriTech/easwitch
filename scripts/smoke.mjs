@@ -11,6 +11,7 @@ const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "easw-smoke-"));
 const env = { ...process.env, EASWITCH_CONFIG_DIR: path.join(tmp, "config"), NO_COLOR: "1" };
 delete env.EXPO_TOKEN;
+delete env.EASWITCH_HOOK; // an active hook in the developer's terminal would change `easw current`
 const id = `smoke-${process.pid}-${Date.now()}`;
 const [a, b] = [`${id}-a`, `${id}-b`];
 
@@ -59,14 +60,26 @@ try {
 
   assert.equal(easw(["use"]).status, 1, "use without a name needs a terminal for the picker");
   // Shell hook: plain `eas` uses the linked account only inside the linked project.
-  assert.match(ok(["shell-init", "bash"]), /eas\(\) \{ command easw __shell-eas "\$@"; \}/);
-  const hooked = easw(["__shell-eas", "--version"], { cwd: nested });
+  assert.match(ok(["shell-init", "bash"]), /eas\(\) \{ command easw eas "\$@"; \}/);
+  const hooked = easw(["eas", "--version"], { cwd: nested });
   assert.equal(hooked.status, 0);
   assert.match(hooked.stderr, new RegExp(`using account "${b}"`));
-  const plain = easw(["__shell-eas", "--version"]);
+  const plain = easw(["eas", "--version"]);
   assert.equal(plain.status, 0);
   assert.doesNotMatch(plain.stderr, /using account/);
   assert.match(plain.stdout, /eas-cli\//);
+  // Hooks installed before 0.9 call the legacy name.
+  assert.equal(easw(["__shell-eas", "--version"]).status, 0);
+
+  // easw env: sets EXPO_TOKEN to the linked account; stdout is a pipe here, so it prints.
+  assert.equal(ok(["env"], { cwd: nested }).trim(), "export EXPO_TOKEN='token-b'");
+  assert.equal(ok(["env", "--unset"]).trim(), "unset EXPO_TOKEN");
+
+  // easw current warns when plain `eas` won't follow the link, and not when the hook is active.
+  assert.match(ok(["current"], { cwd: nested }), /Plain `eas` here still uses your normal Expo login/);
+  env.EASWITCH_HOOK = "1";
+  assert.match(ok(["current"], { cwd: nested }), /shell hook is active/);
+  delete env.EASWITCH_HOOK;
 
   ok(["use", b]);
   assert.match(ok(["current"]), new RegExp(`Current EASwitch account: ${b}`));

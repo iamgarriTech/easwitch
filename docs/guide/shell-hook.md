@@ -61,7 +61,21 @@ If you'd rather edit your config by hand, add the line for your shell instead of
 
 ## What the hook does
 
-The hook is a tiny shell function named `eas` that hands every `eas` call to EASwitch. EASwitch then checks for a `.easwitch.json`:
+The hook is a tiny shell function named `eas` that calls `easw eas` with your arguments. `easw eas` then checks for a `.easwitch.json`:
 
 - **Found:** it runs `eas` as the linked account, exactly like `easw` would.
 - **Not found**, or you're running `eas login` / `eas logout`: it runs your normal `eas`, unchanged.
+
+You can run `easw eas` yourself too, for example in scripts or CI, to get the same behaviour without the hook. See [`easw eas`](/reference/commands#easw-eas).
+
+The hook also sets `EASWITCH_HOOK=1` in the terminal. That's how `easw current` knows whether plain `eas` follows links in the terminal you're using.
+
+## Is the hook working?
+
+Run `easw current` inside a linked project:
+
+| It says | Meaning |
+|---|---|
+| "Plain eas here uses it too (the shell hook is active)" | All good. |
+| "⚠ … the shell hook is set up, but this terminal hasn't loaded it" | You set up the hook after opening this terminal. Open a new one. |
+| "⚠ Plain eas here still uses your normal Expo login … Run easw hook" | The hook isn't set up. Run `easw hook`, or type `easw` instead of `eas`. |

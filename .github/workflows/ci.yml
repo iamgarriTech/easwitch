@@ -62,7 +62,7 @@ jobs:
           $autorun = (Get-ItemProperty $key -ErrorAction SilentlyContinue).AutoRun
           if ("$autorun" -notmatch "cmd-hook\.cmd") { throw "AutoRun not set: $autorun" }
           $file = ($autorun -split '"')[1]
-          if (-not (Select-String -Path $file -Pattern "doskey eas=easw __shell-eas" -Quiet)) { throw "hook file missing the macro: $file" }
+          if (-not (Select-String -Path $file -Pattern "doskey eas=easw eas" -Quiet)) { throw "hook file missing the macro: $file" }
           cmd /d /c "`"$file`""
           if ($LASTEXITCODE -ne 0) { throw "hook file failed to run" }
           Write-Output "doskey macros: $(cmd /c 'doskey /macros')"

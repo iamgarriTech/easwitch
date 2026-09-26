@@ -29,7 +29,16 @@ describe("route", () => {
     }
   });
 
-  it("routes the shell hook's plain eas calls", () => {
+  it("routes easw eas like the shell hook", () => {
+    expect(route(["eas", "build", "--platform", "ios"])).toEqual({
+      kind: "shell-eas",
+      args: ["build", "--platform", "ios"],
+    });
+    expect(route(["env", "fish"])).toEqual({ kind: "easw" });
+    expect(route(["env:list"])).toEqual({ kind: "run", command: "eas", args: ["env:list"] });
+  });
+
+  it("keeps the legacy __shell-eas name working for older hooks", () => {
     expect(route(["__shell-eas", "build", "--platform", "ios"])).toEqual({
       kind: "shell-eas",
       args: ["build", "--platform", "ios"],

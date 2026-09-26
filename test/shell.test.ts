@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { installHook, shellInit, uninstallHook } from "../src/shell.js";
+import { envCode, installHook, shellInit, uninstallHook } from "../src/shell.js";
 
 let tmp: string;
 beforeEach(() => {
@@ -51,8 +51,25 @@ describe("installHook / uninstallHook", () => {
 
 describe("shellInit", () => {
   it("wraps eas for each shell", () => {
-    expect(shellInit("zsh")).toContain('eas() { command easw __shell-eas "$@"; }');
-    expect(shellInit("fish")).toContain("command easw __shell-eas $argv");
-    expect(shellInit("powershell")).toContain("function eas { easw __shell-eas @args }");
+    expect(shellInit("zsh")).toContain('eas() { command easw eas "$@"; }');
+    expect(shellInit("zsh")).toContain("export EASWITCH_HOOK=1");
+    expect(shellInit("fish")).toContain("command easw eas $argv");
+    expect(shellInit("fish")).toContain("set -gx EASWITCH_HOOK 1");
+    expect(shellInit("powershell")).toContain("function eas { easw eas @args }");
+    expect(shellInit("cmd")).toContain("@doskey eas=easw eas $*");
+  });
+});
+
+describe("envCode", () => {
+  it("quotes the token safely for each shell", () => {
+    expect(envCode("bash", "a'b")).toBe("export EXPO_TOKEN='a'\\''b'\n");
+    expect(envCode("fish", "a'b")).toBe("set -gx EXPO_TOKEN 'a\\'b'\n");
+    expect(envCode("powershell", "a'b")).toBe("$env:EXPO_TOKEN = 'a''b'\n");
+    expect(envCode("cmd", "abc")).toBe('set "EXPO_TOKEN=abc"\n');
+  });
+
+  it("clears the token with a null value", () => {
+    expect(envCode("zsh", null)).toBe("unset EXPO_TOKEN\n");
+    expect(envCode("fish", null)).toBe("set -e EXPO_TOKEN\n");
   });
 });

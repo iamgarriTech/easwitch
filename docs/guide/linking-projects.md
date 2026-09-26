@@ -43,6 +43,8 @@ If the hook isn't set up yet, `easw link` asks whether to set it up:
 
 Press Enter to set it up, or pass `--no-hook-prompt` to skip the question.
 
+Not sure whether plain `eas` follows the link in your terminal? `easw current` tells you, and warns you when it doesn't.
+
 For a full walkthrough, see [Example: working at Acme](/guide/example-workflow).
 
 ## Which account is used?
