@@ -7,7 +7,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "smoke": "node scripts/smoke.mjs",
-    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
   "keywords": [
     "expo",
@@ -32,6 +35,7 @@
     "@types/node": "^26.6.3",
     "tsup": "^8.5.1",
     "typescript": "^7.0.2",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.11"
   },
   "type": "module",
@@ -49,7 +53,7 @@
     "type": "git",
     "url": "git+https://github.com/iamgarriTech/easwitch.git"
   },
-  "homepage": "https://github.com/iamgarriTech/easwitch#readme",
+  "homepage": "https://iamgarritech.github.io/easwitch/",
   "bugs": {
     "url": "https://github.com/iamgarriTech/easwitch/issues"
   }
