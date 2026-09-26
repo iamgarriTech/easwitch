@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-26
+
 ### Added
 
 - `easw shell-init`: an opt-in shell hook (zsh, bash, fish, PowerShell) so plain `eas` runs as the linked account inside projects linked with `easw link`, and as your normal login everywhere else. `eas login`/`eas logout` always use your normal session.
@@ -75,7 +77,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`.
 - `build`, `update`, `submit` and `whoami` run as the resolved account.
 
-[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/iamgarriTech/easwitch/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/iamgarriTech/easwitch/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/iamgarriTech/easwitch/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/iamgarriTech/easwitch/compare/v0.4.0...v0.4.1
