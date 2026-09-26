@@ -54,3 +54,22 @@ export function writeProjectLink(dir: string, account: string): string {
   fs.writeFileSync(file, JSON.stringify({ account }, null, 2) + "\n");
   return file;
 }
+
+/**
+ * Add .easwitch.json to `dir`/.gitignore if that file exists and doesn't list it.
+ * Returns true when it was added.
+ */
+export function ensureGitignored(dir: string): boolean {
+  const file = path.join(dir, ".gitignore");
+  let contents: string;
+  try {
+    contents = fs.readFileSync(file, "utf8");
+  } catch {
+    return false;
+  }
+  const listed = contents.split(/\r?\n/).some((l) => [PROJECT_FILE, `/${PROJECT_FILE}`].includes(l.trim()));
+  if (listed) return false;
+  const sep = contents === "" || contents.endsWith("\n") ? "" : "\n";
+  fs.appendFileSync(file, `${sep}${PROJECT_FILE}\n`);
+  return true;
+}

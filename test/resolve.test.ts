@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { GlobalConfig } from "../src/config.js";
-import { findProjectRoot, writeProjectLink } from "../src/project.js";
+import { ensureGitignored, findProjectRoot, writeProjectLink } from "../src/project.js";
 import { resolveAccount } from "../src/resolve.js";
 
 let tmp: string;
@@ -60,5 +60,15 @@ describe("findProjectRoot", () => {
     const nested = path.join(tmp, "a", "b");
     fs.mkdirSync(nested, { recursive: true });
     expect(findProjectRoot(nested)).toBe(tmp);
+  });
+});
+
+describe("ensureGitignored", () => {
+  it("appends once to an existing .gitignore and skips when there is none", () => {
+    expect(ensureGitignored(tmp)).toBe(false);
+    fs.writeFileSync(path.join(tmp, ".gitignore"), "node_modules");
+    expect(ensureGitignored(tmp)).toBe(true);
+    expect(ensureGitignored(tmp)).toBe(false);
+    expect(fs.readFileSync(path.join(tmp, ".gitignore"), "utf8")).toBe("node_modules\n.easwitch.json\n");
   });
 });

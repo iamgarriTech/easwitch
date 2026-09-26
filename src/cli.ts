@@ -6,14 +6,12 @@ import { password } from "@inquirer/prompts";
 import pc from "picocolors";
 import { assertValidName, loadConfig, saveConfig, type GlobalConfig } from "./config.js";
 import { EaswError } from "./errors.js";
-import { findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
+import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
+import { EAS_COMMANDS, route } from "./route.js";
 import { runWithAccount, whoamiForToken } from "./run.js";
 import { deleteToken, setToken } from "./tokens.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
-
-/** Subcommands forwarded to `eas <sub> ...args` with every argument passed through untouched. */
-const EAS_PASSTHROUGH = ["build", "update", "submit", "whoami"] as const;
 
 const ok = (msg: string) => console.log(`${pc.green("✓")} ${msg}`);
 
@@ -149,8 +147,12 @@ function buildProgram(): Command {
     .action((name: string) => {
       const cfg = loadConfig();
       requireAccount(cfg, name);
-      const file = writeProjectLink(findProjectRoot(process.cwd()), name);
+      const root = findProjectRoot(process.cwd());
+      const file = writeProjectLink(root, name);
       ok(`Project linked to "${name}" ${pc.dim(`(${path.relative(process.cwd(), file) || file})`)}`);
+      if (ensureGitignored(root)) {
+        console.log(pc.dim(`  Added ${PROJECT_FILE} to .gitignore, since account names are personal.`));
+      }
     });
 
   program
@@ -166,8 +168,8 @@ function buildProgram(): Command {
       ok("Project account removed");
     });
 
-  // Registered for --help only; main() handles these before commander parses.
-  for (const sub of EAS_PASSTHROUGH) {
+  // Registered for --help only; main() routes these before commander parses.
+  for (const sub of EAS_COMMANDS) {
     program.command(sub).description(`run \`eas ${sub}\` as the resolved account`);
   }
   program.command("exec").argument("<command...>").description("run any command as the resolved account");
@@ -176,16 +178,8 @@ function buildProgram(): Command {
 }
 
 async function main(argv: string[]): Promise<number> {
-  const [sub, ...rest] = argv;
-  // Hand these straight to the child so flags like --platform or --help reach eas untouched.
-  if ((EAS_PASSTHROUGH as readonly string[]).includes(sub)) {
-    return runWithAccount("eas", [sub, ...rest]);
-  }
-  if (sub === "exec") {
-    const args = rest[0] === "--" ? rest.slice(1) : rest;
-    if (!args.length) throw new EaswError("Usage: easw exec <command> [args...]");
-    return runWithAccount(args[0], args.slice(1));
-  }
+  const r = route(argv);
+  if (r.kind === "run") return runWithAccount(r.command, r.args);
   await buildProgram().parseAsync(argv, { from: "user" });
   return 0;
 }

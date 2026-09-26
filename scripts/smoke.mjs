@@ -36,13 +36,16 @@ try {
   ok(["exec", "npm", "--version"]);
   assert.equal(easw(["exec", "node", "-e", "process.exit(7)"]).status, 7);
   assert.equal(easw(["exec", "definitely-not-a-command"]).status, 1);
+  assert.equal(easw(["login"]).status, 1, "unknown commands are not forwarded to eas");
 
   const project = path.join(tmp, "project");
   const nested = path.join(project, "src", "screens");
   fs.mkdirSync(nested, { recursive: true });
   fs.writeFileSync(path.join(project, "app.json"), "{}");
+  fs.writeFileSync(path.join(project, ".gitignore"), "node_modules\n");
   ok(["link", b], { cwd: nested });
   assert.ok(fs.existsSync(path.join(project, ".easwitch.json")), "link should write at project root");
+  assert.match(fs.readFileSync(path.join(project, ".gitignore"), "utf8"), /^\.easwitch\.json$/m);
   assert.equal(ok(printToken, { cwd: nested }), "token-b");
   assert.equal(ok(printToken), "token-a", "outside the project, current account applies");
 

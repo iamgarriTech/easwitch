@@ -435,18 +435,18 @@ Credential store entries use service `easwitch` and the profile name as the acco
 
 - **Token validation:** `easw add` runs `eas whoami` with the new token; a rejected token is not saved.
 - **Linked account missing:** if `.easwitch.json` names an account that doesn't exist, the command fails. It never falls back to the current account, since that could build or publish under the wrong Expo account.
-- **Link lookup:** `.easwitch.json` is found by walking up from the working directory (like `.git`), so commands work from subdirectories. `easw link` writes it at the nearest directory containing `eas.json`, `app.json`, `app.config.*` or `package.json`.
+- **Link lookup:** `.easwitch.json` is found by walking up from the working directory (like `.git`), so commands work from subdirectories. `easw link` writes it at the nearest directory containing `eas.json`, `app.json`, `app.config.*` or `package.json`. It also adds `.easwitch.json` to an existing `.gitignore` there.
 - **`EXPO_TOKEN` already set in the shell:** EASwitch overrides it for the child and prints a warning.
 - **First account added** becomes the current account automatically.
 - **Removing the current account** leaves no current account; the user picks one with `easw use`.
 - **Linux without a keyring:** a clear error explains that a Secret Service provider (gnome-keyring, KWallet) must be running.
 - **`eas` not installed:** a clear error suggests `npm install -g eas-cli`.
 
-## Open Questions
+## Decisions
 
-- Should `.easwitch.json` be committed? Profile names are personal, so teammates may not share them. Currently left to the developer.
-- Should unknown subcommands (e.g. `easw credentials`, `easw env:list`) be forwarded to `eas` automatically?
-- Headless Linux / CI fallback when no keyring is available (e.g. an encrypted file store)?
+- **Only the listed eas commands are wrapped.** EASwitch isn't a replacement for EAS CLI, so `easw` exposes only `build`, `update`, `submit` and `whoami`. Unknown subcommands are errors rather than being forwarded. Any other command runs through `easw exec`, e.g. `easw exec eas env:list`.
+- **`.easwitch.json` is gitignored by default.** Profile names are personal, so teammates may not share them. `easw link` appends the file to an existing `.gitignore` in the project root. Teams that agree on names can remove that line and commit it.
+- **No plaintext fallback when no keyring is available.** It would break the secure-storage guarantee. EASwitch targets developer machines; CI should set `EXPO_TOKEN` directly.
 
 
 ## Non-Goals
