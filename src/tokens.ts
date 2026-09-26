@@ -1,7 +1,17 @@
+import { createHash } from "node:crypto";
+import path from "node:path";
 import { AsyncEntry } from "@napi-rs/keyring";
 import { EaswError } from "./errors.js";
 
-const SERVICE = "easwitch";
+/**
+ * Credential store service name. A custom EASWITCH_CONFIG_DIR (tests, demos) gets its own
+ * service, so a throwaway account named "personal" can never overwrite or delete the real one.
+ */
+export function tokenService(): string {
+  const dir = process.env.EASWITCH_CONFIG_DIR;
+  if (!dir) return "easwitch";
+  return `easwitch:${createHash("sha256").update(path.resolve(dir)).digest("hex").slice(0, 12)}`;
+}
 
 function keychainError(err: unknown): EaswError {
   const detail = err instanceof Error ? err.message : String(err);
@@ -15,7 +25,7 @@ function keychainError(err: unknown): EaswError {
 
 export async function setToken(account: string, token: string): Promise<void> {
   try {
-    await new AsyncEntry(SERVICE, account).setPassword(token);
+    await new AsyncEntry(tokenService(), account).setPassword(token);
   } catch (err) {
     throw keychainError(err);
   }
@@ -23,7 +33,7 @@ export async function setToken(account: string, token: string): Promise<void> {
 
 export async function getToken(account: string): Promise<string | undefined> {
   try {
-    return await new AsyncEntry(SERVICE, account).getPassword();
+    return await new AsyncEntry(tokenService(), account).getPassword();
   } catch (err) {
     throw keychainError(err);
   }
@@ -31,7 +41,7 @@ export async function getToken(account: string): Promise<string | undefined> {
 
 export async function deleteToken(account: string): Promise<boolean> {
   try {
-    return await new AsyncEntry(SERVICE, account).deleteCredential();
+    return await new AsyncEntry(tokenService(), account).deleteCredential();
   } catch (err) {
     throw keychainError(err);
   }
