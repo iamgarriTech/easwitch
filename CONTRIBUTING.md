@@ -71,12 +71,16 @@ PRs are squash-merged, so the PR title becomes the commit message. Use a short i
 
 ## Releasing (maintainers)
 
-`main` is protected, so releases go through a PR too.
+Releases are published to npm by GitHub Actions ([`release.yml`](.github/workflows/release.yml)) using npm trusted publishing, so no npm token is stored and each version gets a provenance attestation.
 
 1. On a `release/vX.Y.Z` branch, run `npm version X.Y.Z --no-git-tag-version` and move the **Unreleased** entries in `CHANGELOG.md` under a `## [X.Y.Z] - YYYY-MM-DD` heading. Open a PR and merge it once CI passes.
-2. Tag the merge commit and push the tag: `git checkout main && git pull && git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
-3. From that commit, run `npm publish` (it runs typecheck, tests and build first).
-4. Create a GitHub release from the tag with the changelog entry.
+2. Tag the merge commit and push the tag:
+   ```bash
+   git checkout main && git pull
+   git tag -a vX.Y.Z -m vX.Y.Z
+   git push origin vX.Y.Z
+   ```
+3. The Release workflow checks the tag matches `package.json`, runs typecheck, tests and build, publishes to npm, and creates the GitHub release from the changelog entry.
 
 ## Code of conduct
 
