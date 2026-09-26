@@ -88,7 +88,8 @@ export function whoamiForToken(token: string): Promise<string> {
     child.stderr!.on("data", (d) => (err += d));
     child.on("error", reject);
     child.on("close", (code) => {
-      const username = out.split(/\r?\n/).map((l) => l.trim()).find(Boolean);
+      // First line is the username; newer eas-cli versions append " (authenticated using EXPO_TOKEN)".
+      const username = out.split(/\r?\n/).map((l) => l.trim()).find(Boolean)?.split(/\s+/)[0];
       if (code === 0 && username) return resolve(username);
       const reason =
         `${out}\n${err}`.split(/\r?\n/).map((l) => l.trim()).find(Boolean) ?? `eas whoami exited with code ${code}`;

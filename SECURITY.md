@@ -14,6 +14,7 @@ Include what you found, how to reproduce it, and the impact you expect. You'll g
 - Tokens leaking outside the OS credential store (config files, logs, error output, other processes)
 - `EXPO_TOKEN` persisting beyond the child process EASwitch starts
 - EASwitch modifying the user's normal Expo login
+- The temporary login session used by `easw add --login` being left on disk, left valid, or exposed
 - Running the wrong account's token because of a resolution bug
 
 ## Supported versions
