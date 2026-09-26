@@ -37,6 +37,17 @@ npm run build
 npm run smoke     # end-to-end run against your real credential store; cleans up after itself
 ```
 
+### Docs site
+
+The documentation website lives in `docs/` and is built with [VitePress](https://vitepress.dev):
+
+```bash
+npm run docs:dev      # local preview with live reload
+npm run docs:build    # production build; fails on dead links
+```
+
+It deploys to GitHub Pages automatically when docs change on `main`. If you change a command or option, update both the README and the matching page under `docs/`.
+
 ### Project layout
 
 | Path | What's there |
@@ -50,6 +61,7 @@ npm run smoke     # end-to-end run against your real credential store; cleans up
 | `src/config.ts`, `src/project.ts` | Global config and `.easwitch.json` handling |
 | `test/` | Unit tests |
 | `scripts/smoke.mjs` | End-to-end test of the built CLI |
+| `docs/` | Documentation website (VitePress) and the README demo recording (`docs/demo/`) |
 
 ## Pull requests
 

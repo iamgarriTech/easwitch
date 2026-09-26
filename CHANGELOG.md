@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- Documentation website at https://iamgarritech.github.io/easwitch/, with a getting started guide, pages on linking projects, the shell hook, how it works and scripting, a full command reference, and an FAQ.
+
 ## [0.7.0] - 2026-09-26
 
 ### Added

@@ -38,6 +38,7 @@ Set `EASWITCH_CONFIG_DIR` to a temp directory when running the CLI by hand so yo
 | `src/project.ts` | `.easwitch.json` lookup (walks up like `.git`), project root detection, `.gitignore` update |
 | `test/` | Unit tests for routing and resolution |
 | `scripts/smoke.mjs` | End-to-end test of the built CLI |
+| `docs/` | VitePress docs site (`npm run docs:build`), deployed to GitHub Pages; keep it in sync with the README |
 
 ## Current design decisions
 
@@ -57,7 +58,7 @@ These describe how the tool behaves today. Changing any of them is possible, but
 - TypeScript strict, ES modules, Node `^20.18.3 || >=22`. Match the surrounding style; comments explain *why*.
 - Use `cross-spawn` for child processes (Windows `.cmd` shims).
 - Keep commits and PRs focused. PRs are squash-merged into a protected `main` and need CI to pass on all platforms.
-- For user-visible changes, update `README.md` and add an entry under **Unreleased** in `CHANGELOG.md`.
+- For user-visible changes, update `README.md`, the matching page in `docs/`, and add an entry under **Unreleased** in `CHANGELOG.md`.
 
 ## Using easw from an agent
 

@@ -5,6 +5,8 @@
 [![npm](https://img.shields.io/npm/v/easwitch)](https://www.npmjs.com/package/easwitch)
 [![CI](https://github.com/iamgarriTech/easwitch/actions/workflows/ci.yml/badge.svg)](https://github.com/iamgarriTech/easwitch/actions/workflows/ci.yml)
 
+**📖 Documentation: [iamgarritech.github.io/easwitch](https://iamgarritech.github.io/easwitch/)**
+
 If you build apps for yourself, your company and a couple of clients, you know the routine: `eas logout`, `eas login`, run a build, switch back. EASwitch removes that. You save each account once, and every `easw` command runs as the right one, picked from the project you're in or the account you've selected.
 
 Your normal Expo login is never touched. `eas build`, `eas whoami` and `expo start` keep working exactly as before.
