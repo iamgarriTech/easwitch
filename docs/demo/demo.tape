@@ -1,10 +1,11 @@
-# Records docs/demo/demo.gif. Run through ./docs/demo/record.sh, which sets up the demo accounts.
+# Records docs/demo/demo.gif. Run through ./docs/demo/record.sh, which sets up the demo accounts
+# and points zsh's config folder away from your real ~/.zshrc.
 
 Output demo.gif
 
 Set Shell "bash"
 Set FontSize 20
-Set Width 1240
+Set Width 1340
 Set Height 640
 Set Padding 28
 Set Theme "Dracula"
@@ -18,29 +19,21 @@ Show
 Type "easw list" Sleep 400ms Enter
 Sleep 2s
 
-Type "easw add client-acme" Sleep 400ms Enter
-Sleep 1.5s
-Down Sleep 350ms Down Sleep 350ms Down Sleep 500ms Enter
-Sleep 1.2s
-Type "demo-client" Sleep 400ms Enter
-Sleep 2.5s
+Type "cd acme-app && easw link work" Sleep 400ms Enter
+Sleep 2s
+Enter
+Sleep 3s
 
+# Like opening a new terminal: load the hook easw link just set up.
 Hide
-Type "clear" Enter
+Type "source $ZDOTDIR/.zshrc && clear" Enter
 Show
 
-Type "easw use work" Sleep 400ms Enter
-Sleep 1.2s
-Type "easw whoami" Sleep 400ms Enter
-Sleep 1.5s
-Type "eas whoami   # your normal login is untouched" Sleep 400ms Enter
-Sleep 2.5s
-
-Hide
-Type "clear" Enter
-Show
-
-Type "cd acme-app && easw link client-acme" Sleep 400ms Enter
-Sleep 1.5s
-Type "easw build --platform ios" Sleep 400ms Enter
-Sleep 4s
+Type "# new terminal: keep typing eas" Sleep 400ms Enter
+Sleep 800ms
+Type "eas whoami" Sleep 400ms Enter
+Sleep 2s
+Type "eas build --platform ios" Sleep 400ms Enter
+Sleep 3.5s
+Type "cd .. && eas whoami   # not a linked project: your normal login" Sleep 400ms Enter
+Sleep 3.5s

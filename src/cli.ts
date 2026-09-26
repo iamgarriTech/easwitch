@@ -4,7 +4,7 @@ import os from "node:os";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { Command } from "commander";
-import { password, select } from "@inquirer/prompts";
+import { confirm, password, select } from "@inquirer/prompts";
 import pc from "picocolors";
 import { assertValidName, loadConfig, saveConfig, type GlobalConfig } from "./config.js";
 import { EaswError } from "./errors.js";
@@ -324,7 +324,8 @@ function buildProgram(): Command {
     .command("link")
     .description("link the current project to an account")
     .argument("<name>")
-    .action((name: string) => {
+    .option("--no-hook-prompt", "don't offer to set up `easw hook`")
+    .action(async (name: string, opts: { hookPrompt: boolean }) => {
       const cfg = loadConfig();
       requireAccount(cfg, name);
       const root = findProjectRoot(process.cwd());
@@ -334,9 +335,21 @@ function buildProgram(): Command {
         console.log(pc.dim(`  Added ${PROJECT_FILE} to .gitignore, since account names are personal.`));
       }
       console.log(pc.dim(`  \`easw\` commands here now use "${name}" (easw whoami, easw build, easw update...).`));
-      if (!isHookInstalled()) {
-        console.log(pc.dim("  To make plain `eas` commands use it too, run `easw hook` once."));
+      if (isHookInstalled()) {
+        console.log(pc.dim("  Plain `eas` commands here use it too (the hook is set up)."));
+        return;
       }
+      if (!opts.hookPrompt || !process.stdin.isTTY) {
+        console.log(pc.dim("  To make plain `eas` commands use it too, run `easw hook` once."));
+        return;
+      }
+      console.log();
+      const yes = await confirm({
+        message: "Make plain `eas` commands use linked accounts too? (sets up `easw hook`)",
+        default: true,
+      });
+      if (yes) setUpHook(defaultHookShells());
+      else console.log(pc.dim("  OK. Run `easw hook` any time to set it up."));
     });
 
   program
@@ -361,26 +374,28 @@ function buildProgram(): Command {
   const tilde = (file: string) => (file.startsWith(os.homedir()) ? `~${file.slice(os.homedir().length)}` : file);
 
   const where = (sh: Shell) => (sh === "cmd" ? "Command Prompt (AutoRun)" : tilde(rcFile(sh)));
+  const setUpHook = (shells: Shell[]) => {
+    let added = false;
+    for (const sh of shells) {
+      if (sh === "cmd" ? installCmdHook() : installHook(sh, rcFile(sh))) {
+        ok(`Added the EASwitch hook to ${where(sh)}`);
+        added = true;
+      } else {
+        console.log(`The EASwitch hook is already in ${where(sh)}.`);
+      }
+    }
+    if (added) {
+      console.log(pc.dim("  Open a new terminal for it to take effect."));
+      console.log(pc.dim("  Inside linked projects, plain `eas` now uses the linked account. Undo with `easw unhook`."));
+    }
+  };
 
   program
     .command("hook")
     .description("make plain `eas` use the linked account inside linked projects (sets it up for you)")
     .argument("[shell]", `${SHELLS.join(", ")} (default: your shell; on Windows, PowerShell and cmd)`)
     .action((shell: string | undefined) => {
-      const shells = shell ? [parseShell(shell)] : defaultHookShells();
-      let added = false;
-      for (const sh of shells) {
-        if (sh === "cmd" ? installCmdHook() : installHook(sh, rcFile(sh))) {
-          ok(`Added the EASwitch hook to ${where(sh)}`);
-          added = true;
-        } else {
-          console.log(`The EASwitch hook is already in ${where(sh)}.`);
-        }
-      }
-      if (added) {
-        console.log(pc.dim("  Open a new terminal for it to take effect."));
-        console.log(pc.dim("  Inside linked projects, plain `eas` now uses the linked account. Undo with `easw unhook`."));
-      }
+      setUpHook(shell ? [parseShell(shell)] : defaultHookShells());
     });
 
   program

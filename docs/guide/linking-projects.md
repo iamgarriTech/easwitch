@@ -35,7 +35,13 @@ Linking changes `easw` commands straight away. Plain `eas` commands follow the l
 easw hook        # once; then open a new terminal
 ```
 
-`easw link` reminds you of this when the hook isn't set up yet.
+If the hook isn't set up yet, `easw link` asks whether to set it up:
+
+```text
+? Make plain `eas` commands use linked accounts too? (sets up `easw hook`) (Y/n)
+```
+
+Press Enter to set it up, or pass `--no-hook-prompt` to skip the question.
 
 For a full walkthrough, see [Example: working at Acme](/guide/example-workflow).
 

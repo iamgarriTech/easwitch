@@ -46,7 +46,7 @@ These describe how the tool behaves today. Changing any of them is possible, but
 
 - Tokens are stored only in the OS credential store, never in config files, output or logs.
 - `EXPO_TOKEN` is set only in the spawned child's environment.
-- Plain `eas` uses the normal login unless the user installs the opt-in `easw shell-init` hook. With it, plain `eas` uses the linked account only inside linked projects, and `login`/`logout` still go to the normal session.
+- Plain `eas` uses the normal login unless the user installs the opt-in hook (`easw hook`, which `easw link` offers when it's missing). With it, plain `eas` uses the linked account only inside linked projects, and `login`/`logout` still go to the normal session.
 - `easw add --login` never touches the real `~/.expo`: the temporary session lives in a throwaway home directory and is logged out and deleted afterwards. Only the resulting access token is kept, in the credential store.
 - `easw login`, `logout`, `account:login` and `account:logout` are blocked because they would write the normal Expo session.
 - If a project links to an account that doesn't exist, commands fail rather than falling back to the current account.

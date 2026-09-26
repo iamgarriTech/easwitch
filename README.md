@@ -11,25 +11,32 @@ If you build apps for yourself, your company and a couple of clients, you know t
 
 Your normal Expo login is never touched. `eas build`, `eas whoami` and `expo start` keep working exactly as before.
 
-![EASwitch demo: listing accounts, adding one, switching, and building a linked project](https://raw.githubusercontent.com/iamgarriTech/easwitch/main/docs/demo/demo.gif)
+![EASwitch demo: linking a project, turning on the shell hook, then using plain eas as the linked account](https://raw.githubusercontent.com/iamgarriTech/easwitch/main/docs/demo/demo.gif)
 
 ## Quick start
+
+Set up once:
 
 ```bash
 npm install -g easwitch       # install (EAS CLI is included)
 
-easw add personal             # save an account: log in, or paste an access token
+easw add personal             # save each account once: log in, or paste an access token
 easw add work
-
-easw use work                 # choose which account easw uses
-easw build --platform ios     # run any EAS command as that account
+easw hook                     # plain `eas` now follows project links (then open a new terminal)
 
 cd ~/code/acme-app
-easw link work                # this project always uses "work"
-
-easw hook                     # optional: make plain `eas` use the linked account too
-easw shell-init               # optional: only show the hook code, to add it yourself
+easw link work                # this project belongs to "work"
 ```
+
+Then keep using `eas` as usual:
+
+```bash
+eas whoami                    # in acme-app: the "work" user
+eas build --platform ios      # built as "work"
+cd ~ && eas whoami            # everywhere else: your normal login
+```
+
+Prefer not to change `eas`? Skip `easw hook` and type `easw` instead (`easw whoami`, `easw build`…). To add the hook to your shell config yourself, use `easw shell-init`.
 
 ## Contents
 
@@ -90,41 +97,50 @@ Either way, the token is checked with Expo and stored in your system's credentia
 
 Sign in as the account you're adding. If your browser is already signed in to a different Expo account, switch accounts there first.
 
-The first account you add becomes the current one.
-
-### 2. Choose an account and use it
-
-```bash
-easw use work                     # or just `easw use` to pick from a list
-easw whoami                       # shows the "work" user
-easw build --platform ios
-easw update --branch production
-```
-
-### 3. Link projects to accounts (optional)
-
-```bash
-cd ~/code/acme-app
-easw link client-acme
-easw build                        # always runs as "client-acme" in this project
-```
-
-Once a project is linked, **every `easw` command in it runs as that account**: `easw whoami`, `easw build`, `easw update`, `easw submit`, `easw env:list` and the rest, in every subfolder, whatever account you've chosen with `easw use`.
-
-| In a linked project | Without `easw hook` | After `easw hook` (once) |
-|---|---|---|
-| `easw whoami`, `easw build`, `easw update`… | ✅ linked account | ✅ linked account |
-| `eas whoami`, `eas build`, `eas update`… | your normal login | ✅ linked account |
-
-So to make plain `eas` commands follow the link, run `easw hook` once (step 4).
-
-### 4. Use plain `eas` too (optional)
+### 2. Keep using `eas`: turn on the hook
 
 ```bash
 easw hook
 ```
 
-Open a new terminal. Now plain `eas` also uses the linked account inside linked projects. See [Use plain `eas` in linked projects](#use-plain-eas-in-linked-projects).
+This adds one line to your shell's startup file (zsh, bash, fish, PowerShell or Command Prompt) so plain `eas` goes through EASwitch. Open a new terminal afterwards. It's safe: outside linked projects, `eas` stays your normal login, and `eas login` / `eas logout` still manage your normal session. Undo it with `easw unhook`.
+
+If you skip this step, `easw link` offers to do it for you.
+
+### 3. Link each project to its account
+
+```bash
+cd ~/code/acme-app
+easw link client-acme
+```
+
+A linked project uses its account in every subfolder.
+
+### 4. Use `eas` as usual
+
+```bash
+cd ~/code/acme-app
+eas whoami                        # the client-acme user
+eas build --platform ios
+eas update --branch production
+```
+
+```text
+› easw: using account "client-acme" (linked in .easwitch.json)
+```
+
+That line shows whenever `eas` is running as a linked account. Outside linked projects, `eas` is your normal Expo login.
+
+### Without the hook
+
+You don't have to change `eas`. Type `easw` instead, and you get the same result without the hook:
+
+| In a linked project | With `easw hook` | Without it |
+|---|---|---|
+| `eas whoami`, `eas build`, `eas update`… | ✅ linked account | your normal login |
+| `easw whoami`, `easw build`, `easw update`… | ✅ linked account | ✅ linked account |
+
+`easw` commands outside linked projects use your *current* account, which you choose with `easw use work` (or `easw use` to pick from a list). The first account you add is the current one to start with.
 
 ## Example: working at Acme
 
@@ -138,30 +154,30 @@ easw add personal                 # log in as her personal Expo user
 easw add acme                     # log in with her Acme work account (SSO)
 easw add globex                   # paste the access token the client gave her
 
+easw hook                         # so she can keep typing plain `eas`
+
 cd ~/code/acme-shop   && easw link acme
 cd ~/code/globex-app  && easw link globex
 ```
 
-**Every day after that**, she just changes folders:
+**Every day after that**, she keeps using `eas` and just changes folders:
 
 ```bash
 cd ~/code/acme-shop
-easw whoami                       # jane-acme
-easw build --platform ios         # built under Acme
-easw update --branch production   # published under Acme
+eas whoami                        # jane-acme
+eas build --platform ios          # built under Acme
+eas update --branch production    # published under Acme
 
 cd ~/code/globex-app
-easw submit --platform android    # submitted under Globex
+eas submit --platform android     # submitted under Globex
 
 cd ~/code/my-side-project
-easw build                        # her current account: personal
-
-eas whoami                        # still her normal Expo login
+eas whoami                        # her normal Expo login: jane
 ```
 
-Every `easw` command in a linked project, from `easw whoami` to `easw submit`, runs as that project's account. She never types an account name, and the `› easw: using account …` line always shows which one ran. Right after linking, `easw whoami` is a quick check that the project uses the Expo user she expects.
+Every `eas` command in a linked project, from `eas whoami` to `eas submit`, runs as that project's account. She never types an account name, and the `› easw: using account …` line always shows which one ran. Right after linking, `eas whoami` is a quick check that the project uses the Expo user she expects.
 
-**Plain `eas` commands:** linking alone doesn't change them. Jane ran `easw hook` once, and since then plain `eas whoami`, `eas build` and so on use the linked account inside linked projects too.
+That's thanks to `easw hook`. Without it, she'd type `easw` instead of `eas` (`easw build`, `easw submit`…) and get the same result.
 
 > **User, not organization:** an EASwitch account picks the Expo **user** whose token runs the command. It doesn't choose an Expo organization or change who owns the app. Acme's app must already belong to Acme's Expo organization, and `jane-acme` must have access to it.
 
@@ -264,12 +280,14 @@ A token that EASwitch created by logging in stays valid on Expo until you revoke
 ### `easw link`
 
 ```text
-easw link <name>
+easw link <name> [--no-hook-prompt]
 ```
 
 Links the project you're in to an account. EASwitch writes a small `.easwitch.json` file (`{ "account": "work" }`) at the project root: the nearest folder containing `eas.json`, `app.json`, `app.config.js`, `app.config.ts` or `package.json`. The link applies in every subfolder.
 
 If the project has a `.gitignore`, EASwitch adds `.easwitch.json` to it, because account names are personal and your teammates may name theirs differently. If your team agrees on names, you can remove that line and commit the file.
+
+If the [shell hook](#use-plain-eas-in-linked-projects) isn't set up yet, `easw link` asks whether to set it up, so plain `eas` commands use linked accounts too. Pass `--no-hook-prompt` to skip the question. Without a terminal it never asks, and just prints a tip.
 
 ### `easw unlink`
 
