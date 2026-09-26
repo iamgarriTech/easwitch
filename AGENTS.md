@@ -33,7 +33,7 @@ Set `EASWITCH_CONFIG_DIR` to a temp directory when running the CLI by hand so yo
 | `src/eas.ts` | Finds EAS CLI: global `eas` on `PATH` first, otherwise the bundled `eas-cli` dependency run with `process.execPath` |
 | `src/login.ts` | `easw add --login`: runs the bundled `eas login` with `HOME`/`USERPROFILE` set to a temp dir, uses that temporary session to create an access token via Expo's GraphQL API, then logs it out and deletes the dir |
 | `src/shell.ts` | Shell hook: `easw hook`/`unhook` (edit the shell's config file between a marker comment), `easw shell-init` scripts (zsh/bash/fish/PowerShell/cmd; cmd uses a doskey macro loaded via the AutoRun registry value), and `runShellEas`, which the hook calls through the hidden `__shell-eas` subcommand |
-| `src/tokens.ts` | OS credential store via `@napi-rs/keyring` (service `easwitch`, account = profile name) |
+| `src/tokens.ts` | OS credential store via `@napi-rs/keyring` (service `easwitch`, account = profile name; a custom `EASWITCH_CONFIG_DIR` gets its own `easwitch:<hash>` service so tests never touch real tokens) |
 | `src/config.ts` | Global `config.json` (`{ accounts, current }`, no tokens) in the OS config dir |
 | `src/project.ts` | `.easwitch.json` lookup (walks up like `.git`), project root detection, `.gitignore` update |
 | `test/` | Unit tests for routing and resolution |

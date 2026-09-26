@@ -450,7 +450,7 @@ On Linux, a Secret Service provider (such as GNOME Keyring or KWallet) must be r
 
 | Variable | Effect |
 |---|---|
-| `EASWITCH_CONFIG_DIR` | Use this folder for EASwitch's config instead of the default. Handy for testing without touching your real accounts. |
+| `EASWITCH_CONFIG_DIR` | Use this folder for EASwitch's config instead of the default. Its tokens are kept in a separate part of the credential store, so it's safe for testing without touching your real accounts. |
 | `EXPO_TOKEN` | If it's already set in your shell, EASwitch overrides it for the commands it runs, and prints a warning. |
 | `NO_COLOR` | Turn off colored output. |
 

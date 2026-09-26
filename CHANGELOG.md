@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- A custom `EASWITCH_CONFIG_DIR` now keeps its tokens separate from your real accounts' tokens. Before, adding or removing an account with the same name there (for example in a test or demo) also overwrote or deleted your real token for that account.
+
 ## [0.8.0] - 2026-09-26
 
 ### Added
