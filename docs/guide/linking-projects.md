@@ -12,7 +12,32 @@ easw link client-acme
   Added .easwitch.json to .gitignore, since account names are personal.
 ```
 
-From then on, every `easw` command in that project, or any of its subfolders, uses `client-acme`, whatever account you've chosen with `easw use`.
+From then on, **every `easw` command in that project runs as `client-acme`**, in the project folder and all its subfolders, whatever account you've chosen with `easw use`:
+
+```bash
+easw whoami                       # client-acme's user
+easw build --platform ios
+easw update --branch production
+easw submit --platform android
+easw env:list
+```
+
+## Plain `eas` commands
+
+Linking changes `easw` commands straight away. Plain `eas` commands follow the link only after you turn on the [shell hook](/guide/shell-hook) once:
+
+| In a linked project | Without `easw hook` | After `easw hook` (once) |
+|---|---|---|
+| `easw whoami`, `easw build`, `easw update`… | ✅ linked account | ✅ linked account |
+| `eas whoami`, `eas build`, `eas update`… | your normal login | ✅ linked account |
+
+```bash
+easw hook        # once; then open a new terminal
+```
+
+`easw link` reminds you of this when the hook isn't set up yet.
+
+For a full walkthrough, see [Example: working at Acme](/guide/example-workflow).
 
 ## Which account is used?
 

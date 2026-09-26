@@ -169,3 +169,15 @@ export function uninstallCmdHook(): boolean {
   writeAutoRun(rest);
   return true;
 }
+
+/** Best effort: whether the hook is already in the user's shell config. False when unsure. */
+export function isHookInstalled(): boolean {
+  if (process.platform === "win32") return false; // checking the PowerShell profile means starting PowerShell
+  try {
+    const file = rcFile(detectShell());
+    const contents = fs.readFileSync(file, "utf8");
+    return contents.includes(HOOK_MARKER) || contents.includes("easw shell-init");
+  } catch {
+    return false;
+  }
+}
