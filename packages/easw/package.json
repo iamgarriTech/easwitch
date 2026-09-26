@@ -1,0 +1,32 @@
+{
+  "name": "easw",
+  "version": "0.2.0",
+  "description": "Alias for easwitch: switch between multiple Expo/EAS accounts without touching your normal Expo login",
+  "type": "module",
+  "bin": {
+    "easw": "cli.js",
+    "easwitch": "cli.js"
+  },
+  "files": [
+    "cli.js"
+  ],
+  "dependencies": {
+    "easwitch": ">=0.2.0"
+  },
+  "engines": {
+    "node": "^20.18.3 || >=22.0.0"
+  },
+  "keywords": [
+    "expo",
+    "eas",
+    "cli",
+    "accounts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamgarriTech/easwitch.git",
+    "directory": "packages/easw"
+  },
+  "homepage": "https://github.com/iamgarriTech/easwitch#readme",
+  "license": "MIT"
+}
