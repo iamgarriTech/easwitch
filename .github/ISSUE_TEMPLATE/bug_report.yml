@@ -1,0 +1,59 @@
+name: Bug report
+description: Something isn't working as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Never paste access tokens** in this issue.
+        For security problems, use [private reporting](https://github.com/iamgarriTech/easwitch/security/advisories/new) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you ran, what you expected, and what happened instead.
+      placeholder: |
+        Ran `easw build --platform ios` inside a linked project.
+        Expected it to use "work", but it used "personal".
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. easw add work
+        2. cd my-app && easw link work
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: Full terminal output, including the `› easw:` status line. Remove any tokens.
+      render: text
+  - type: input
+    id: easw-version
+    attributes:
+      label: EASwitch version
+      description: Output of `easw --version`
+    validations:
+      required: true
+  - type: input
+    id: eas-version
+    attributes:
+      label: EAS CLI version
+      description: Output of `easw exec eas --version`
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options: [macOS, Windows, Linux]
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      description: Output of `node --version`
