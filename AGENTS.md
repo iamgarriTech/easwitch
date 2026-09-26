@@ -62,6 +62,6 @@ These describe how the tool behaves today. Changing any of them is possible, but
 If you're operating the CLI rather than editing it:
 
 - `easw current --json` shows which account easw would use in the current directory and why (`resolved.source` is `project` or `current`).
-- `easw list --json` lists accounts, marking the current and linked ones.
+- `easw list --json` lists accounts, marking the current and linked ones. Add `--check` to test each token with Expo (adds `valid`/`error`; exits 1 if any are invalid).
 - `easw add <name>` needs a token: pass `--token` or pipe it on stdin. Without a terminal and no token, it fails instead of prompting.
 - Exit codes of wrapped commands are passed through unchanged.

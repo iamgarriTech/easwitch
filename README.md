@@ -82,8 +82,8 @@ easw build           # always runs as "client-acme" inside this project
 | Command | What it does |
 |---|---|
 | `easw add <name>` | Save an account, by logging in to Expo or pasting an access token. |
-| `easw list` | List saved accounts. The current one is marked `●`. |
-| `easw use <name>` | Set the current account. |
+| `easw list` | List saved accounts. The current one is marked `●`. Add `--check` to test each token with Expo and flag revoked or expired ones. |
+| `easw use [name]` | Set the current account. Without a name, pick from a list. |
 | `easw current` | Show the current account, and the project's linked account if there is one. |
 | `easw remove <name>` | Delete an account and its stored token. |
 | `easw link <name>` | Link the current project to an account. |
@@ -153,6 +153,7 @@ EASwitch works without a terminal, so shell scripts and AI coding agents can use
 ```bash
 easw current --json   # which account easw would use here, and why
 easw list --json      # all accounts, marking the current and linked ones
+easw list --check     # test every token with Expo; exits 1 if any are invalid
 echo "$TOKEN" | easw add work   # add an account non-interactively
 ```
 
