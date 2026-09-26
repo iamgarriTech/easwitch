@@ -78,10 +78,14 @@ PRs are squash-merged, so the PR title becomes the commit message. Use a short i
 
 ## Releasing (maintainers)
 
-1. Move **Unreleased** entries in `CHANGELOG.md` under a new version heading.
-2. `npm version <patch|minor|major>`. This bumps `package.json` and creates a `vX.Y.Z` tag.
-3. `npm publish`. It runs typecheck, tests and build first.
-4. `git push --follow-tags`, then create a GitHub release from the tag with the changelog entry.
+`main` is protected, so releases go through a PR too.
+
+1. On a `release/vX.Y.Z` branch, run `npm version X.Y.Z --no-git-tag-version` and move the **Unreleased** entries in `CHANGELOG.md` under a `## [X.Y.Z] - YYYY-MM-DD` heading. Open a PR and merge it once CI passes.
+2. Tag the merge commit and push the tag: `git checkout main && git pull && git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z`.
+3. From that commit, run `npm publish` (it runs typecheck, tests and build first).
+4. Create a GitHub release from the tag with the changelog entry.
+
+The `easw` alias package in `packages/easw` depends on `easwitch >=0.2.0`, so it doesn't need a release each time. Republish it (`cd packages/easw && npm publish`, after bumping its version) only when its `cli.js` or metadata change.
 
 ## Code of conduct
 
