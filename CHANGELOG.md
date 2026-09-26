@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-09-26
+
 ### Changed
 
 - Releases are published from GitHub Actions with npm trusted publishing, so each version on npm has a provenance attestation.
@@ -56,7 +58,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - `add`, `list`, `use`, `current`, `remove`, `link`, `unlink`, `exec`.
 - `build`, `update`, `submit` and `whoami` run as the resolved account.
 
-[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/iamgarriTech/easwitch/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/iamgarriTech/easwitch/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/iamgarriTech/easwitch/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/iamgarriTech/easwitch/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/iamgarriTech/easwitch/compare/v0.2.0...v0.2.1
