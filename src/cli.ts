@@ -8,6 +8,7 @@ import pc from "picocolors";
 import { assertValidName, loadConfig, saveConfig, type GlobalConfig } from "./config.js";
 import { EaswError } from "./errors.js";
 import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
+import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
 import { TOKEN_URL, runWithAccount, whoamiForToken } from "./run.js";
 import { deleteToken, setToken } from "./tokens.js";
@@ -15,6 +16,7 @@ import { deleteToken, setToken } from "./tokens.js";
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
 const ok = (msg: string) => console.log(`${pc.green("✓")} ${msg}`);
+const printJson = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
 function requireAccount(cfg: GlobalConfig, name: string): void {
   if (!cfg.accounts[name]) {
@@ -106,9 +108,23 @@ function buildProgram(): Command {
     .command("list")
     .alias("ls")
     .description("list account profiles")
-    .action(() => {
+    .option("--json", "print machine-readable JSON")
+    .action((opts: { json?: boolean }) => {
       const cfg = loadConfig();
       const names = Object.keys(cfg.accounts).sort();
+      if (opts.json) {
+        const link = findProjectLink(process.cwd());
+        printJson({
+          current: cfg.current,
+          accounts: names.map((name) => ({
+            name,
+            username: cfg.accounts[name].username ?? null,
+            current: name === cfg.current,
+            linked: link?.account === name,
+          })),
+        });
+        return;
+      }
       if (!names.length) {
         console.log("No accounts yet. Add one with `easw add <name>`.");
         return;
@@ -145,8 +161,24 @@ function buildProgram(): Command {
   program
     .command("current")
     .description("show the current account")
-    .action(() => {
+    .option("--json", "print machine-readable JSON, including the account easw would use here")
+    .action((opts: { json?: boolean }) => {
       const cfg = loadConfig();
+      if (opts.json) {
+        const cwd = process.cwd();
+        const link = findProjectLink(cwd);
+        let resolved: { name: string; source: string } | null = null;
+        let error: string | null = null;
+        try {
+          const r = resolveAccount(cfg, cwd);
+          resolved = { name: r.name, source: r.source };
+        } catch (err) {
+          if (!(err instanceof EaswError)) throw err;
+          error = err.message;
+        }
+        printJson({ current: cfg.current, project: link, resolved, error });
+        return;
+      }
       console.log(`Current EASwitch account: ${cfg.current ?? pc.dim("(none)")}`);
       const link = findProjectLink(process.cwd());
       if (link) {

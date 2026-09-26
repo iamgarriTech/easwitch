@@ -137,6 +137,29 @@ Nothing is written to your shell, your Expo login (`~/.expo/state.json`), or you
 
 On Linux, a Secret Service provider (such as GNOME Keyring or KWallet) must be running and unlocked. EASwitch won't store tokens in a plain file.
 
+## Scripts and AI agents
+
+EASwitch works without a terminal, so shell scripts and AI coding agents can use it too:
+
+```bash
+easw current --json   # which account easw would use here, and why
+easw list --json      # all accounts, marking the current and linked ones
+echo "$TOKEN" | easw add work   # add an account non-interactively
+```
+
+```json
+{
+  "current": "personal",
+  "project": { "account": "work", "file": "/Users/jane/code/acme-app/.easwitch.json" },
+  "resolved": { "name": "work", "source": "project" },
+  "error": null
+}
+```
+
+Wrapped commands keep their exit codes and stdout, and easw's own status line goes to stderr. Without a terminal, `easw add` fails with a clear message rather than waiting for input.
+
+If you're using an AI assistant to work on EASwitch itself, [AGENTS.md](AGENTS.md) gives it an overview of the codebase.
+
 ## FAQ
 
 **Does this log me out of Expo?**
