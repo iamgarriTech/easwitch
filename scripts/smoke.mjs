@@ -32,6 +32,8 @@ try {
   assert.match(ok(["list"]), new RegExp(`● ${a}`));
 
   assert.equal(ok(printToken), "token-a");
+  // CI has no global eas, so this exercises the bundled eas-cli.
+  assert.match(ok(["exec", "eas", "--version"]), /eas-cli\//);
   // A .cmd shim on Windows; exercises cross-spawn.
   ok(["exec", "npm", "--version"]);
   assert.equal(easw(["exec", "node", "-e", "process.exit(7)"]).status, 7);

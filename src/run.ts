@@ -2,15 +2,13 @@ import path from "node:path";
 import spawn from "cross-spawn";
 import pc from "picocolors";
 import { loadConfig } from "./config.js";
+import { resolveEas } from "./eas.js";
 import { EaswError } from "./errors.js";
 import { resolveAccount } from "./resolve.js";
 import { getToken } from "./tokens.js";
 
 function notFound(command: string): EaswError {
-  return new EaswError(
-    `Command not found: ${command}`,
-    command === "eas" ? "Install EAS CLI with `npm install -g eas-cli`." : undefined,
-  );
+  return new EaswError(`Command not found: ${command}`);
 }
 
 /**
@@ -28,10 +26,13 @@ export async function runWithAccount(command: string, args: string[], cwd = proc
     );
   }
 
-  const via =
-    account.source === "project"
-      ? `linked in ${path.relative(cwd, account.linkFile!) || account.linkFile}`
-      : "current";
+  const eas = command === "eas" ? resolveEas() : undefined;
+  const via = [
+    account.source === "project" ? `linked in ${path.relative(cwd, account.linkFile!) || account.linkFile}` : "current",
+    eas?.bundled && `bundled eas-cli ${eas.bundled}`,
+  ]
+    .filter(Boolean)
+    .join(", ");
   // stderr, so piping the command's stdout stays clean.
   process.stderr.write(pc.dim(`› easw: using account "${account.name}" (${via})\n`));
   if (process.env.EXPO_TOKEN && process.env.EXPO_TOKEN !== token) {
@@ -39,7 +40,7 @@ export async function runWithAccount(command: string, args: string[], cwd = proc
   }
 
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const child = spawn(eas ? eas.command : command, eas ? [...eas.prefix, ...args] : args, {
       cwd,
       stdio: "inherit",
       env: { ...process.env, EXPO_TOKEN: token },
@@ -74,7 +75,8 @@ function signalNumber(signal: NodeJS.Signals): number | undefined {
 /** Resolve the Expo username for a token by running `eas whoami` with it. */
 export function whoamiForToken(token: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = spawn("eas", ["whoami"], {
+    const eas = resolveEas();
+    const child = spawn(eas.command, [...eas.prefix, "whoami"], {
       stdio: ["ignore", "pipe", "pipe"],
       env: { ...process.env, EXPO_TOKEN: token, FORCE_COLOR: "0" },
     });
@@ -82,7 +84,7 @@ export function whoamiForToken(token: string): Promise<string> {
     let err = "";
     child.stdout!.on("data", (d) => (out += d));
     child.stderr!.on("data", (d) => (err += d));
-    child.on("error", (e: NodeJS.ErrnoException) => reject(e.code === "ENOENT" ? notFound("eas") : e));
+    child.on("error", reject);
     child.on("close", (code) => {
       const username = out.split(/\r?\n/).map((l) => l.trim()).find(Boolean);
       if (code === 0 && username) return resolve(username);
