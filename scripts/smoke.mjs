@@ -57,6 +57,7 @@ try {
   assert.deepEqual(list.accounts.map((x) => [x.name, x.current, x.linked]), [[a, true, false], [b, false, true]]);
   assert.equal(ok(printToken), "token-a", "outside the project, current account applies");
 
+  assert.equal(easw(["use"]).status, 1, "use without a name needs a terminal for the picker");
   ok(["use", b]);
   assert.match(ok(["current"]), new RegExp(`Current EASwitch account: ${b}`));
   ok(["unlink"], { cwd: nested });

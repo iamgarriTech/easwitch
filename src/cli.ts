@@ -13,7 +13,7 @@ import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, write
 import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
 import { TOKEN_URL, runWithAccount, whoamiForToken } from "./run.js";
-import { deleteToken, setToken } from "./tokens.js";
+import { deleteToken, getToken, setToken } from "./tokens.js";
 
 const { version } = createRequire(import.meta.url)("../package.json") as { version: string };
 
@@ -73,6 +73,24 @@ async function promptForToken(): Promise<string> {
     token = (await ask()).trim();
   }
   return token;
+}
+
+interface TokenCheck {
+  valid: boolean;
+  username?: string;
+  error?: string;
+}
+
+/** Ask Expo whether an account's stored token still works. */
+async function checkAccount(name: string): Promise<TokenCheck> {
+  const token = await getToken(name);
+  if (!token) return { valid: false, error: "no token stored" };
+  try {
+    return { valid: true, username: await whoamiForToken(token) };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { valid: false, error: message.replace(/^Token was rejected by Expo: /, "") };
+  }
 }
 
 function buildProgram(): Command {
@@ -150,12 +168,33 @@ function buildProgram(): Command {
     .command("list")
     .alias("ls")
     .description("list account profiles")
+    .option("--check", "check each token with Expo and flag revoked or expired ones")
     .option("--json", "print machine-readable JSON")
-    .action((opts: { json?: boolean }) => {
+    .action(async (opts: { check?: boolean; json?: boolean }) => {
       const cfg = loadConfig();
       const names = Object.keys(cfg.accounts).sort();
+      const link = findProjectLink(process.cwd());
+
+      let checks: Record<string, TokenCheck> = {};
+      if (opts.check && names.length) {
+        if (!opts.json) process.stderr.write(pc.dim("Checking tokens with Expo...\n"));
+        const results = await Promise.all(names.map(checkAccount));
+        checks = Object.fromEntries(names.map((name, i) => [name, results[i]]));
+        // Fill in or correct the stored username while we're at it.
+        let changed = false;
+        for (const name of names) {
+          const username = checks[name].username;
+          if (username && cfg.accounts[name].username !== username) {
+            cfg.accounts[name].username = username;
+            changed = true;
+          }
+        }
+        if (changed) saveConfig(cfg);
+        // Let scripts detect a broken token from the exit code.
+        if (results.some((r) => !r.valid)) process.exitCode = 1;
+      }
+
       if (opts.json) {
-        const link = findProjectLink(process.cwd());
         printJson({
           current: cfg.current,
           accounts: names.map((name) => ({
@@ -163,6 +202,7 @@ function buildProgram(): Command {
             username: cfg.accounts[name].username ?? null,
             current: name === cfg.current,
             linked: link?.account === name,
+            ...(opts.check && { valid: checks[name].valid, error: checks[name].error ?? null }),
           })),
         });
         return;
@@ -171,7 +211,6 @@ function buildProgram(): Command {
         console.log("No accounts yet. Add one with `easw add <name>`.");
         return;
       }
-      const link = findProjectLink(process.cwd());
       const width = Math.max(...names.map((n) => n.length));
       console.log(pc.bold("EASwitch Accounts\n"));
       for (const name of names) {
@@ -180,16 +219,33 @@ function buildProgram(): Command {
         const label = current ? pc.green(name.padEnd(width)) : name.padEnd(width);
         const user = cfg.accounts[name].username ? pc.dim(`  ${cfg.accounts[name].username}`) : "";
         const linked = link?.account === name ? pc.cyan("  (linked to this project)") : "";
-        console.log(`${bullet} ${label}${user}${linked}`);
+        const check = checks[name];
+        const status = !check ? "" : check.valid ? pc.green("  ✓ valid") : pc.red(`  ✗ ${check.error}`);
+        console.log(`${bullet} ${label}${user}${linked}${status}`);
       }
+      const invalid = names.filter((name) => checks[name] && !checks[name].valid);
+      if (invalid.length) console.log(pc.dim(`\nReplace a token with \`easw add ${invalid[0]} --force\`.`));
     });
 
   program
     .command("use")
-    .description("set the current account (doesn't affect your normal `eas` login)")
-    .argument("<name>")
-    .action((name: string) => {
+    .description("set the current account (doesn't affect your normal `eas` login); omit the name to pick")
+    .argument("[name]")
+    .action(async (name: string | undefined) => {
       const cfg = loadConfig();
+      if (!name) {
+        const names = Object.keys(cfg.accounts).sort();
+        if (!names.length) throw new EaswError("No accounts yet", "Add one with `easw add <name>`.");
+        if (!process.stdin.isTTY) throw new EaswError("Usage: easw use <name>");
+        name = await select({
+          message: "Which account do you want to use?",
+          choices: names.map((n) => ({
+            name: `${n}${cfg.accounts[n].username ? pc.dim(`  ${cfg.accounts[n].username}`) : ""}${n === cfg.current ? pc.dim("  (current)") : ""}`,
+            value: n,
+          })),
+          default: cfg.current ?? undefined,
+        });
+      }
       requireAccount(cfg, name);
       cfg.current = name;
       saveConfig(cfg);
@@ -292,7 +348,7 @@ async function main(argv: string[]): Promise<number> {
   const r = route(argv);
   if (r.kind === "run") return runWithAccount(r.command, r.args);
   await buildProgram().parseAsync(argv, { from: "user" });
-  return 0;
+  return typeof process.exitCode === "number" ? process.exitCode : 0;
 }
 
 main(process.argv.slice(2)).then(

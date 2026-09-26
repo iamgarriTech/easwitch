@@ -4,6 +4,11 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `easw use` without a name shows a picker of your accounts.
+- `easw list --check` tests each stored token with Expo and flags revoked or expired ones. It exits with code 1 if any are invalid, and fills in missing usernames.
+
 ## [0.4.1] - 2026-09-26
 
 ### Changed
