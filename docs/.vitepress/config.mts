@@ -34,6 +34,7 @@ export default defineConfig({
         text: "Guide",
         items: [
           { text: "Getting started", link: "/guide/getting-started" },
+          { text: "Example: working at Acme", link: "/guide/example-workflow" },
           { text: "Linking projects", link: "/guide/linking-projects" },
           { text: "Use plain eas (shell hook)", link: "/guide/shell-hook" },
           { text: "How it works", link: "/guide/how-it-works" },

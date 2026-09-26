@@ -18,6 +18,7 @@ import {
   detectShell,
   installCmdHook,
   installHook,
+  isHookInstalled,
   rcFile,
   runShellEas,
   shellInit,
@@ -331,6 +332,10 @@ function buildProgram(): Command {
       ok(`Project linked to "${name}" ${pc.dim(`(${path.relative(process.cwd(), file) || file})`)}`);
       if (ensureGitignored(root)) {
         console.log(pc.dim(`  Added ${PROJECT_FILE} to .gitignore, since account names are personal.`));
+      }
+      console.log(pc.dim(`  \`easw\` commands here now use "${name}" (easw whoami, easw build, easw update...).`));
+      if (!isHookInstalled()) {
+        console.log(pc.dim("  To make plain `eas` commands use it too, run `easw hook` once."));
       }
     });
 

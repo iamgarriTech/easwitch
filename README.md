@@ -35,6 +35,7 @@ easw shell-init               # optional: only show the hook code, to add it you
 
 - [Install](#install)
 - [Getting started](#getting-started)
+- [Example: working at Acme](#example-working-at-acme)
 - [Command reference](#command-reference)
 - [Use plain `eas` in linked projects](#use-plain-eas-in-linked-projects)
 - [Which account is used?](#which-account-is-used)
@@ -108,7 +109,14 @@ easw link client-acme
 easw build                        # always runs as "client-acme" in this project
 ```
 
-A linked project uses its account in every subfolder, whatever account you've chosen with `easw use`.
+Once a project is linked, **every `easw` command in it runs as that account**: `easw whoami`, `easw build`, `easw update`, `easw submit`, `easw env:list` and the rest, in every subfolder, whatever account you've chosen with `easw use`.
+
+| In a linked project | Without `easw hook` | After `easw hook` (once) |
+|---|---|---|
+| `easw whoami`, `easw build`, `easw update`… | ✅ linked account | ✅ linked account |
+| `eas whoami`, `eas build`, `eas update`… | your normal login | ✅ linked account |
+
+So to make plain `eas` commands follow the link, run `easw hook` once (step 4).
 
 ### 4. Use plain `eas` too (optional)
 
@@ -117,6 +125,56 @@ easw hook
 ```
 
 Open a new terminal. Now plain `eas` also uses the linked account inside linked projects. See [Use plain `eas` in linked projects](#use-plain-eas-in-linked-projects).
+
+## Example: working at Acme
+
+Jane works at **Acme** (a made-up company), freelances for a client called **Globex**, and has her own side projects. Each has its own Expo account.
+
+**Once, on day one:**
+
+```bash
+npm install -g easwitch
+easw add personal                 # log in as her personal Expo user
+easw add acme                     # log in with her Acme work account (SSO)
+easw add globex                   # paste the access token the client gave her
+
+cd ~/code/acme-shop   && easw link acme
+cd ~/code/globex-app  && easw link globex
+```
+
+**Every day after that**, she just changes folders:
+
+```bash
+cd ~/code/acme-shop
+easw whoami                       # jane-acme
+easw build --platform ios         # built under Acme
+easw update --branch production   # published under Acme
+
+cd ~/code/globex-app
+easw submit --platform android    # submitted under Globex
+
+cd ~/code/my-side-project
+easw build                        # her current account: personal
+
+eas whoami                        # still her normal Expo login
+```
+
+Every `easw` command in a linked project, from `easw whoami` to `easw submit`, runs as that project's account. She never types an account name, and the `› easw: using account …` line always shows which one ran. Right after linking, `easw whoami` is a quick check that the project uses the Expo user she expects.
+
+**Plain `eas` commands:** linking alone doesn't change them. Jane ran `easw hook` once, and since then plain `eas whoami`, `eas build` and so on use the linked account inside linked projects too.
+
+> **User, not organization:** an EASwitch account picks the Expo **user** whose token runs the command. It doesn't choose an Expo organization or change who owns the app. Acme's app must already belong to Acme's Expo organization, and `jane-acme` must have access to it.
+
+**When things change:**
+
+| Situation | What she does |
+|---|---|
+| A client revokes a token | `easw list --check` shows which one; `easw add globex --force` replaces it |
+| A new teammate joins Acme | They run `easw add acme` and `easw link acme` on their machine (`.easwitch.json` is gitignored) |
+| She gets a new laptop | Tokens stay in each computer's keychain, so she runs `easw add` again for each account |
+| The Globex contract ends | `easw unlink` in the project, then `easw remove globex` |
+
+The [docs site has the full walkthrough](https://iamgarritech.github.io/easwitch/guide/example-workflow).
 
 ## Command reference
 

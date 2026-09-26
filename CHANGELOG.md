@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Added
 
+- "Example: working at Acme" in the README and on the docs website: a full walkthrough of using work, client and personal Expo accounts, including the difference between an Expo user and an organization.
+- `easw link` says that `easw` commands now use the linked account, and suggests `easw hook` when plain `eas` isn't set up to follow links yet.
 - Documentation website at https://iamgarritech.github.io/easwitch/, with a getting started guide, pages on linking projects, the shell hook, how it works and scripting, a full command reference, and an FAQ.
 
 ## [0.7.0] - 2026-09-26

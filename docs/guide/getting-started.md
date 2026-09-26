@@ -71,7 +71,14 @@ easw link client-acme
 easw build                        # always runs as "client-acme" in this project
 ```
 
-A linked project uses its account in every subfolder, whatever account you've chosen with `easw use`. More in [Linking projects](/guide/linking-projects).
+Once a project is linked, **every `easw` command in it runs as that account**: `easw whoami`, `easw build`, `easw update`, `easw submit`, `easw env:list` and the rest, in every subfolder, whatever account you've chosen with `easw use`.
+
+| In a linked project | Without `easw hook` | After `easw hook` (once) |
+|---|---|---|
+| `easw whoami`, `easw build`, `easw update`… | ✅ linked account | ✅ linked account |
+| `eas whoami`, `eas build`, `eas update`… | your normal login | ✅ linked account |
+
+To make plain `eas` commands follow the link, do step 4. More in [Linking projects](/guide/linking-projects).
 
 ## 4. Use plain `eas` too (optional)
 
@@ -83,6 +90,7 @@ Open a new terminal. Now plain `eas` also uses the linked account inside linked 
 
 ## Next steps
 
+- [Example: working at Acme](/guide/example-workflow): how one developer uses EASwitch day to day
 - [Command reference](/reference/commands): every command and option
 - [How it works](/guide/how-it-works): what EASwitch does behind the scenes
 - [FAQ](/faq)
