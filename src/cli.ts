@@ -12,7 +12,19 @@ import { LOGIN_METHODS, loginForToken, type LoginMethod } from "./login.js";
 import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
 import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
-import { SHELLS, detectShell, runShellEas, shellInit, type Shell } from "./shell.js";
+import {
+  SHELLS,
+  defaultHookShells,
+  detectShell,
+  installCmdHook,
+  installHook,
+  rcFile,
+  runShellEas,
+  shellInit,
+  uninstallCmdHook,
+  uninstallHook,
+  type Shell,
+} from "./shell.js";
 import { TOKEN_URL, runWithAccount, whoamiForToken } from "./run.js";
 import { deleteToken, getToken, setToken } from "./tokens.js";
 
@@ -168,7 +180,7 @@ function buildProgram(): Command {
   program
     .command("list")
     .alias("ls")
-    .description("list account profiles")
+    .description("list your accounts (--check tests their tokens with Expo)")
     .option("--check", "check each token with Expo and flag revoked or expired ones")
     .option("--json", "print machine-readable JSON")
     .action(async (opts: { check?: boolean; json?: boolean }) => {
@@ -230,7 +242,7 @@ function buildProgram(): Command {
 
   program
     .command("use")
-    .description("set the current account (doesn't affect your normal `eas` login); omit the name to pick")
+    .description("choose the current account; without a name, pick from a list")
     .argument("[name]")
     .action(async (name: string | undefined) => {
       const cfg = loadConfig();
@@ -259,7 +271,7 @@ function buildProgram(): Command {
 
   program
     .command("current")
-    .description("show the current account")
+    .description("show the current account and the project's linked account")
     .option("--json", "print machine-readable JSON, including the account easw would use here")
     .action((opts: { json?: boolean }) => {
       const cfg = loadConfig();
@@ -288,7 +300,7 @@ function buildProgram(): Command {
   program
     .command("remove")
     .alias("rm")
-    .description("remove an account profile and its stored token")
+    .description("delete an account and its stored token")
     .argument("<name>")
     .action(async (name: string) => {
       const cfg = loadConfig();
@@ -324,7 +336,7 @@ function buildProgram(): Command {
 
   program
     .command("unlink")
-    .description("remove the current project's account link")
+    .description("remove the current project's link")
     .action(() => {
       const link = findProjectLink(process.cwd());
       if (!link) {
@@ -335,26 +347,83 @@ function buildProgram(): Command {
       ok("Project account removed");
     });
 
+  const parseShell = (shell: string | undefined): Shell => {
+    if (shell && !(SHELLS as readonly string[]).includes(shell)) {
+      throw new EaswError(`Unsupported shell "${shell}"`, `Use one of: ${SHELLS.join(", ")}.`);
+    }
+    return (shell as Shell | undefined) ?? detectShell();
+  };
+  const tilde = (file: string) => (file.startsWith(os.homedir()) ? `~${file.slice(os.homedir().length)}` : file);
+
+  const where = (sh: Shell) => (sh === "cmd" ? "Command Prompt (AutoRun)" : tilde(rcFile(sh)));
+
+  program
+    .command("hook")
+    .description("make plain `eas` use the linked account inside linked projects (sets it up for you)")
+    .argument("[shell]", `${SHELLS.join(", ")} (default: your shell; on Windows, PowerShell and cmd)`)
+    .action((shell: string | undefined) => {
+      const shells = shell ? [parseShell(shell)] : defaultHookShells();
+      let added = false;
+      for (const sh of shells) {
+        if (sh === "cmd" ? installCmdHook() : installHook(sh, rcFile(sh))) {
+          ok(`Added the EASwitch hook to ${where(sh)}`);
+          added = true;
+        } else {
+          console.log(`The EASwitch hook is already in ${where(sh)}.`);
+        }
+      }
+      if (added) {
+        console.log(pc.dim("  Open a new terminal for it to take effect."));
+        console.log(pc.dim("  Inside linked projects, plain `eas` now uses the linked account. Undo with `easw unhook`."));
+      }
+    });
+
+  program
+    .command("unhook")
+    .description("remove the hook added by `easw hook`")
+    .argument("[shell]", `${SHELLS.join(", ")} (default: your shell; on Windows, PowerShell and cmd)`)
+    .action((shell: string | undefined) => {
+      const shells = shell ? [parseShell(shell)] : defaultHookShells();
+      let removed = false;
+      for (const sh of shells) {
+        if (sh === "cmd" ? uninstallCmdHook() : uninstallHook(rcFile(sh))) {
+          ok(`Removed the EASwitch hook from ${where(sh)}`);
+          removed = true;
+        } else {
+          console.log(`No EASwitch hook found in ${where(sh)}.`);
+        }
+      }
+      if (removed) console.log(pc.dim("  Open a new terminal for it to take effect."));
+    });
+
   program
     .command("shell-init")
-    .description("print a shell hook so plain `eas` uses the linked account in linked projects")
+    .description("only show the hook code, to add it to your shell settings yourself (`easw hook` does it for you)")
     .argument("[shell]", SHELLS.join(", "))
     .addHelpText(
       "after",
       '\nAdd to your shell config:\n  zsh/bash:    eval "$(easw shell-init)"\n  fish:        easw shell-init fish | source\n  PowerShell:  easw shell-init powershell | Out-String | Invoke-Expression',
     )
     .action((shell: string | undefined) => {
-      if (shell && !(SHELLS as readonly string[]).includes(shell)) {
-        throw new EaswError(`Unsupported shell "${shell}"`, `Use one of: ${SHELLS.join(", ")}.`);
-      }
-      process.stdout.write(shellInit((shell as Shell | undefined) ?? detectShell()));
+      process.stdout.write(shellInit(parseShell(shell)));
     });
 
   // Registered for --help only; main() routes exec before commander parses.
-  program.command("exec").argument("<command...>").description("run any command as the selected account");
+  program.command("exec").argument("<command...>").description("run any other program as the selected account");
   program.addHelpText(
     "after",
-    "\nAny other eas command runs as the selected account, e.g. `easw build` or `easw env:list`.",
+    `
+Any other eas command runs as the selected account, e.g. \`easw build\` or \`easw env:list\`.
+
+Quick start:
+  easw add work                 save an account (log in, or paste an access token)
+  easw use work                 choose the account easw uses
+  easw build --platform ios     run any EAS command as that account
+  easw link work                make the current project always use "work"
+  easw hook                     optional: make plain \`eas\` use the linked account too
+  easw shell-init               optional: only show the hook code, to add it yourself
+
+Docs: https://github.com/iamgarriTech/easwitch#readme`,
   );
 
   return program;

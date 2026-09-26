@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Added
+
+- `easw hook` turns on the shell hook with one command. It detects your shell and adds a marked line to its config file; `easw unhook` removes it. `easw shell-init` still prints the script for manual setup.
+- The shell hook supports Command Prompt (cmd) through a `doskey` macro loaded by cmd's AutoRun setting. On Windows, `easw hook` sets up both PowerShell and Command Prompt.
+- `easw --help` includes quick start examples.
+
+### Changed
+
+- The README has a quick start, a full command reference with every option, and sections on the shell hook, environment variables and exit codes.
+
 ## [0.6.0] - 2026-09-26
 
 ### Added
