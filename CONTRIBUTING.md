@@ -2,13 +2,6 @@
 
 Thanks for helping out! Bug reports, fixes, docs and ideas are all welcome.
 
-## Ground rules
-
-- **EASwitch is a layer on top of EAS CLI, not a replacement.** It picks an account and runs `eas` with that account's token. Features that reimplement EAS CLI behaviour are out of scope.
-- **Never touch the user's normal Expo login.** Nothing may write to `~/.expo/state.json`, run `eas login`/`eas logout`, or leave `EXPO_TOKEN` set outside the child process.
-- **Tokens only live in the OS credential store.** Never write them to config files, logs, error messages or test fixtures.
-- **Cross-platform matters.** Changes must work on macOS, Windows and Linux; CI checks all three.
-
 ## Before you start
 
 - For bugs, [open an issue](https://github.com/iamgarriTech/easwitch/issues/new/choose) first unless the fix is small and obvious.

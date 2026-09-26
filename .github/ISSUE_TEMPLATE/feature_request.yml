@@ -2,9 +2,6 @@ name: Feature request
 description: Suggest an idea or improvement
 labels: [enhancement]
 body:
-  - type: markdown
-    attributes:
-      value: EASwitch adds account switching on top of EAS CLI; it doesn't replace it. Ideas that fit that scope are most likely to be accepted.
   - type: textarea
     id: problem
     attributes:
