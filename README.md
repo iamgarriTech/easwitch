@@ -21,11 +21,9 @@ eas whoami                  # still your normal login
 
 ```bash
 npm install -g easwitch
-# or, the short alias package:
-npm install -g easw
 ```
 
-Either package gives you two commands, `easw` and `easwitch` (identical). Install globally (`-g`) so the commands are on your `PATH`. Requires Node.js 20.18+ or 22+.
+This gives you two commands, `easw` and `easwitch` (identical). Install globally (`-g`) so the commands are on your `PATH`. Requires Node.js 20.18+ or 22+.
 
 EAS CLI comes bundled, so you don't need to install it separately. If you already have `eas` installed globally, EASwitch uses yours instead, so `easw build` and `eas build` always run the same version.
 

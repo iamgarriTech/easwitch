@@ -85,8 +85,6 @@ PRs are squash-merged, so the PR title becomes the commit message. Use a short i
 3. From that commit, run `npm publish` (it runs typecheck, tests and build first).
 4. Create a GitHub release from the tag with the changelog entry.
 
-The `easw` alias package in `packages/easw` depends on `easwitch >=0.2.0`, so it doesn't need a release each time. Republish it (`cd packages/easw && npm publish`, after bumping its version) only when its `cli.js` or metadata change.
-
 ## Code of conduct
 
 This project follows the [Code of Conduct](CODE_OF_CONDUCT.md). By taking part, you agree to uphold it.
