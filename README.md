@@ -160,6 +160,10 @@ npm run smoke        # end-to-end check against your real credential store (clea
 
 Set `EASWITCH_CONFIG_DIR` to use a throwaway config directory while testing.
 
+## Contributing
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and guidelines, and [SECURITY.md](SECURITY.md) for reporting vulnerabilities.
+
 ## License
 
 [MIT](LICENSE)
