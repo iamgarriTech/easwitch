@@ -1,7 +1,8 @@
-# Records docs/demo/demo.gif. Run through ./docs/demo/record.sh, which sets up the demo accounts
+# Records docs/demo/demo.gif and demo.mp4. Run through ./docs/demo/record.sh, which sets up the demo accounts
 # and points zsh's config folder away from your real ~/.zshrc.
 
 Output demo.gif
+Output demo.mp4
 
 Set Shell "bash"
 Set FontSize 20
