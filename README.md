@@ -4,6 +4,7 @@
 
 [![npm](https://img.shields.io/npm/v/easwitch)](https://www.npmjs.com/package/easwitch)
 [![CI](https://github.com/iamgarriTech/easwitch/actions/workflows/ci.yml/badge.svg)](https://github.com/iamgarriTech/easwitch/actions/workflows/ci.yml)
+[![Fund my work on FLOSSAfrica](https://flossafrica.com/badge.svg)](https://flossafrica.com/m/iamgarritech?p=easwitch)
 
 **📖 Documentation: [iamgarritech.github.io/easwitch](https://iamgarritech.github.io/easwitch/)**
 
