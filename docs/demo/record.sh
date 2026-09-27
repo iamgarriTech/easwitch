@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Re-records docs/demo/demo.gif with throwaway demo accounts.
+# Re-records docs/demo/demo.gif and demo.mp4 with throwaway demo accounts.
 # Needs vhs (https://github.com/charmbracelet/vhs) and a built CLI (npm run build).
 # The demo uses a stand-in `eas` (fake-eas), so no real Expo accounts or tokens are involved.
 set -euo pipefail
@@ -43,5 +43,5 @@ easw add work --token demo-work >/dev/null
 easw use personal >/dev/null
 
 (cd "$work" && vhs "$here/demo.tape")
-mv "$work/demo.gif" "$here/demo.gif"
-echo "Wrote $here/demo.gif"
+mv "$work/demo.gif" "$work/demo.mp4" "$here/"
+echo "Wrote $here/demo.gif and $here/demo.mp4"
