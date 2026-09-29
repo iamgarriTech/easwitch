@@ -296,9 +296,9 @@ A token that EASwitch created by logging in stays valid on Expo until you revoke
 easw link <name> [--no-hook-prompt]
 ```
 
-Links the project you're in to an account. EASwitch writes a small `.easwitch.json` file (`{ "account": "work" }`) at the project root: the nearest folder containing `eas.json`, `app.json`, `app.config.js`, `app.config.ts` or `package.json`. The link applies in every subfolder.
+Links the project you're in to an account. EASwitch writes a small `.easwitch.json` file (`{ "account": "work" }`) at the project root: the nearest folder containing `eas.json`, `app.json`, `app.config.js`, `app.config.ts` or `package.json`. It doesn't look past the git repository root or pick your home folder; if nothing matches, it uses the current folder. The link applies in every subfolder.
 
-If the project has a `.gitignore`, EASwitch adds `.easwitch.json` to it, because account names are personal and your teammates may name theirs differently. If your team agrees on names, you can remove that line and commit the file.
+If the project has a `.gitignore` (in a monorepo, the nearest one up to the repository root), EASwitch adds `.easwitch.json` to it, because account names are personal and your teammates may name theirs differently. If your team agrees on names, you can remove that line and commit the file.
 
 If the [shell hook](#use-plain-eas-in-linked-projects) isn't set up yet, `easw link` asks whether to set it up, so plain `eas` commands use linked accounts too. Pass `--no-hook-prompt` to skip the question. Without a terminal it never asks, and just prints a tip.
 
@@ -308,7 +308,7 @@ If the [shell hook](#use-plain-eas-in-linked-projects) isn't set up yet, `easw l
 easw unlink
 ```
 
-Removes the project's `.easwitch.json`, so easw goes back to using the current account there.
+Removes the project's `.easwitch.json`, so easw goes back to using the current account there. It also removes a link file that's broken, which is one way to fix it.
 
 ### `easw <eas command>`
 

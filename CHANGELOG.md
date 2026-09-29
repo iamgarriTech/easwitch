@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+### Fixed
+
+- `easw unlink` removes a broken `.easwitch.json` instead of failing on it, and says which file it removed (useful when the link is in a parent folder). `easw list`, `easw use` and `easw current` warn about a broken link file instead of failing.
+- `.easwitch.json` files saved with a UTF-8 byte order mark (some Windows editors add one) are read instead of rejected as invalid JSON.
+- Clearer errors for a link file that isn't valid (`null`, no `account` field), is a folder, or can't be read. Before, all of them said "not valid JSON".
+- In a monorepo, `easw link` adds `.easwitch.json` to the nearest `.gitignore` up to the repository root, so a package's link isn't left untracked and easy to commit.
+- `easw link` no longer looks for the project root past the git repository root, or picks your home folder (a stray `~/package.json` used to link everything under it).
+- `easw current` says when the project links to an account that doesn't exist, instead of showing the shell hook warning.
+- `easw remove` warns when the project you're in is still linked to the account you removed.
+
 ## [0.9.0] - 2026-09-26
 
 ### Added
