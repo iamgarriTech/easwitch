@@ -91,8 +91,8 @@ It deliberately doesn't fall back to your current account, so you never build or
 ```
 
 - It contains only the account name, never a token.
-- The project root is the nearest folder containing `eas.json`, `app.json`, `app.config.js`, `app.config.ts` or `package.json`.
-- If the project has a `.gitignore`, EASwitch adds `.easwitch.json` to it, because account names are personal and your teammates may name theirs differently. If your whole team uses the same names, you can remove that line and commit the file.
+- The project root is the nearest folder containing `eas.json`, `app.json`, `app.config.js`, `app.config.ts` or `package.json`. It doesn't look past the git repository root or pick your home folder; if nothing matches, it uses the current folder.
+- If the project has a `.gitignore` (in a monorepo, the nearest one up to the repository root), EASwitch adds `.easwitch.json` to it, because account names are personal and your teammates may name theirs differently. If your whole team uses the same names, you can remove that line and commit the file.
 
 ## Unlinking
 
@@ -100,4 +100,4 @@ It deliberately doesn't fall back to your current account, so you never build or
 easw unlink
 ```
 
-This removes the project's `.easwitch.json`, so easw goes back to using the current account there.
+This removes the project's `.easwitch.json`, so easw goes back to using the current account there. It also removes a link file that's broken, which is one way to fix it.

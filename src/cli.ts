@@ -9,7 +9,15 @@ import pc from "picocolors";
 import { assertValidName, loadConfig, saveConfig, type GlobalConfig } from "./config.js";
 import { EaswError } from "./errors.js";
 import { LOGIN_METHODS, loginForToken, type LoginMethod } from "./login.js";
-import { PROJECT_FILE, ensureGitignored, findProjectLink, findProjectRoot, writeProjectLink } from "./project.js";
+import {
+  PROJECT_FILE,
+  ensureGitignored,
+  findProjectLink,
+  findProjectLinkFile,
+  findProjectRoot,
+  writeProjectLink,
+  type ProjectLink,
+} from "./project.js";
 import { resolveAccount } from "./resolve.js";
 import { route } from "./route.js";
 import {
@@ -91,6 +99,19 @@ async function promptForToken(): Promise<string> {
   }
   return token;
 }
+
+/** The project's link, or null with a warning when the link file is broken, for commands that work without it. */
+function projectLinkOrWarn(cwd = process.cwd()): ProjectLink | null {
+  try {
+    return findProjectLink(cwd);
+  } catch (err) {
+    if (!(err instanceof EaswError)) throw err;
+    process.stderr.write(pc.yellow(`⚠ ${err.message}\n`) + (err.hint ? pc.dim(`  ${err.hint}\n`) : ""));
+    return null;
+  }
+}
+
+const relative = (file: string) => path.relative(process.cwd(), file) || file;
 
 /** Whether plain `eas` goes through EASwitch in this terminal (active) or will in new ones (installed). */
 function hookStatus(): { installed: boolean; active: boolean } {
@@ -196,7 +217,7 @@ function buildProgram(): Command {
     .action(async (opts: { check?: boolean; json?: boolean }) => {
       const cfg = loadConfig();
       const names = Object.keys(cfg.accounts).sort();
-      const link = findProjectLink(process.cwd());
+      const link = projectLinkOrWarn();
 
       let checks: Record<string, TokenCheck> = {};
       if (opts.check && names.length) {
@@ -273,7 +294,7 @@ function buildProgram(): Command {
       cfg.current = name;
       saveConfig(cfg);
       ok(`Using EAS account "${name}"`);
-      const link = findProjectLink(process.cwd());
+      const link = projectLinkOrWarn();
       if (link && link.account !== name) {
         console.log(pc.yellow(`  Note: this project is linked to "${link.account}", which takes precedence here.`));
       }
@@ -287,10 +308,11 @@ function buildProgram(): Command {
       const cfg = loadConfig();
       if (opts.json) {
         const cwd = process.cwd();
-        const link = findProjectLink(cwd);
+        let link: ProjectLink | null = null;
         let resolved: { name: string; source: string } | null = null;
         let error: string | null = null;
         try {
+          link = findProjectLink(cwd);
           const r = resolveAccount(cfg, cwd);
           resolved = { name: r.name, source: r.source };
         } catch (err) {
@@ -309,9 +331,16 @@ function buildProgram(): Command {
         return;
       }
       console.log(`Current EASwitch account: ${cfg.current ?? pc.dim("(none)")}`);
-      const link = findProjectLink(process.cwd());
+      const link = projectLinkOrWarn();
       if (!link) return;
       console.log(`This project is linked to: ${pc.cyan(link.account)} ${pc.dim(`(${link.file})`)}`);
+      if (!cfg.accounts[link.account]) {
+        console.log(
+          pc.red(`✖ There's no EASwitch account named "${link.account}", so easw commands here will fail.`) +
+            pc.dim(`\n  Add it with \`easw add ${link.account}\`, or relink with \`easw link <name>\`.`),
+        );
+        return;
+      }
       const hook = hookStatus();
       if (hook.active) {
         console.log(pc.dim("Plain `eas` here uses it too (the shell hook is active)."));
@@ -344,6 +373,13 @@ function buildProgram(): Command {
       if (cfg.current === name) cfg.current = null;
       saveConfig(cfg);
       ok(`Account "${name}" removed`);
+      const link = projectLinkOrWarn();
+      if (link?.account === name) {
+        console.log(
+          pc.yellow(`  This project is still linked to "${name}" (${relative(link.file)}), so easw commands here will fail.`) +
+            pc.dim("\n  Link it to another account with `easw link <name>`, or remove the link with `easw unlink`."),
+        );
+      }
       if (createdByLogin) {
         console.log(pc.dim(`  The access token EASwitch created is still valid on Expo. Revoke it at ${TOKEN_URL} if you don't need it.`));
       }
@@ -362,9 +398,10 @@ function buildProgram(): Command {
       requireAccount(cfg, name);
       const root = findProjectRoot(process.cwd());
       const file = writeProjectLink(root, name);
-      ok(`Project linked to "${name}" ${pc.dim(`(${path.relative(process.cwd(), file) || file})`)}`);
-      if (ensureGitignored(root)) {
-        console.log(pc.dim(`  Added ${PROJECT_FILE} to .gitignore, since account names are personal.`));
+      ok(`Project linked to "${name}" ${pc.dim(`(${relative(file)})`)}`);
+      const gitignore = ensureGitignored(root);
+      if (gitignore) {
+        console.log(pc.dim(`  Added ${PROJECT_FILE} to ${relative(gitignore)}, since account names are personal.`));
       }
       console.log(pc.dim(`  \`easw\` commands here now use "${name}" (easw whoami, easw build, easw update...).`));
       const hook = hookStatus();
@@ -393,13 +430,17 @@ function buildProgram(): Command {
     .command("unlink")
     .description("remove the current project's link")
     .action(() => {
-      const link = findProjectLink(process.cwd());
-      if (!link) {
+      // Works on a broken link file too: removing it is one way to fix it.
+      const file = findProjectLinkFile(process.cwd());
+      if (!file) {
         console.log("This project isn't linked to an EASwitch account.");
         return;
       }
-      fs.unlinkSync(link.file);
-      ok("Project account removed");
+      if (fs.statSync(file).isDirectory()) {
+        throw new EaswError(`${file} is a folder, not an EASwitch link file`, "Rename or remove it yourself.");
+      }
+      fs.unlinkSync(file);
+      ok(`Project link removed ${pc.dim(`(${relative(file)})`)}`);
     });
 
   const parseShell = (shell: string | undefined): Shell => {
