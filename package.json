@@ -26,7 +26,7 @@
     "@napi-rs/keyring": "^2.1.0",
     "commander": "^14.0.3",
     "cross-spawn": "^7.0.6",
-    "eas-cli": "^24.8.0",
+    "eas-cli": "^26.0.0",
     "env-paths": "^4.0.0",
     "picocolors": "^1.1.1"
   },
